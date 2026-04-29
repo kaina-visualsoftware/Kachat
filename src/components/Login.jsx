@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Mail, Lock, User, LogIn, UserPlus, ArrowRight } from 'lucide-react'
+import { Mail, Lock, User, LogIn, UserPlus, ArrowRight, MessageSquare } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -40,18 +40,18 @@ export default function Login() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
+      background: 'linear-gradient(135deg, #09090B 0%, #18181B 50%, #09090B 100%)',
       padding: 20
     }}>
       <div style={{
         width: '100%',
         maxWidth: 420,
         padding: 40,
-        background: 'rgba(255, 255, 255, 0.05)',
+        background: 'rgba(24, 24, 27, 0.95)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         borderRadius: 20,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        border: '1px solid rgba(63, 63, 70, 0.5)',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
       }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -60,18 +60,18 @@ export default function Login() {
             height: 60,
             margin: '0 auto 16px',
             borderRadius: 16,
-            background: 'linear-gradient(135deg, #06B6D4, #3B82F6)',
+            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <LogIn size={28} color="white" />
+            <MessageSquare size={28} color="white" />
           </div>
           <h1 style={{
             margin: 0,
             fontSize: 28,
-            fontWeight: 600,
-            color: '#F8FAFC',
+            fontWeight: 700,
+            color: '#FAFAFA',
             letterSpacing: -0.5
           }}>
             {isSignUp ? 'Criar Conta' : 'Bem-vindo'}
@@ -79,7 +79,7 @@ export default function Login() {
           <p style={{
             margin: '8px 0 0',
             fontSize: 14,
-            color: 'rgba(248, 250, 252, 0.6)'
+            color: '#71717A'
           }}>
             {isSignUp ? 'Preencha os dados abaixo' : 'Entre para continuar'}
           </p>
@@ -93,7 +93,7 @@ export default function Login() {
             border: '1px solid rgba(239, 68, 68, 0.3)',
             borderRadius: 12,
             color: '#FCA5A5',
-            fontSize: 14
+            fontSize: 13
           }}>
             {error}
           </div>
@@ -103,11 +103,11 @@ export default function Login() {
           <div style={{
             padding: '12px 16px',
             marginBottom: 20,
-            background: 'rgba(34, 197, 94, 0.1)',
-            border: '1px solid rgba(34, 197, 94, 0.3)',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
             borderRadius: 12,
             color: '#86EFAC',
-            fontSize: 14
+            fontSize: 13
           }}>
             {message}
           </div>
@@ -116,9 +116,9 @@ export default function Login() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {isSignUp && (
             <div style={{ position: 'relative' }}>
-              <User size={18} color="rgba(248, 250, 252, 0.5)" style={{
+              <User size={16} color="#71717A" style={{
                 position: 'absolute',
-                left: 16,
+                left: 14,
                 top: '50%',
                 transform: 'translateY(-50%)',
                 pointerEvents: 'none'
@@ -131,32 +131,32 @@ export default function Login() {
                 required
                 style={{
                   width: '100%',
-                  padding: '14px 16px 14px 44px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  padding: '12px 14px 12px 40px',
+                  background: 'rgba(39, 39, 42, 0.8)',
+                  border: '1px solid rgba(63, 63, 70, 0.5)',
                   borderRadius: 12,
-                  color: '#F8FAFC',
-                  fontSize: 14,
+                  color: '#FAFAFA',
+                  fontSize: 13,
                   outline: 'none',
                   transition: 'all 200ms ease',
                   boxSizing: 'border-box'
                 }}
                 onFocus={(e) => {
-                  e.target.style.border = '1px solid rgba(6, 182, 212, 0.5)'
-                  e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                  e.target.style.border = '1px solid rgba(139, 92, 246, 0.5)'
+                  e.target.style.background = 'rgba(39, 39, 42, 1)'
                 }}
                 onBlur={(e) => {
-                  e.target.style.border = '1px solid rgba(255, 255, 255, 0.1)'
-                  e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                  e.target.style.border = '1px solid rgba(63, 63, 70, 0.5)'
+                  e.target.style.background = 'rgba(39, 39, 42, 0.8)'
                 }}
               />
             </div>
           )}
 
           <div style={{ position: 'relative' }}>
-            <Mail size={18} color="rgba(248, 250, 252, 0.5)" style={{
+            <Mail size={16} color="#71717A" style={{
               position: 'absolute',
-              left: 16,
+              left: 14,
               top: '50%',
               transform: 'translateY(-50%)',
               pointerEvents: 'none'
@@ -169,31 +169,31 @@ export default function Login() {
               required
               style={{
                 width: '100%',
-                padding: '14px 16px 14px 44px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '12px 14px 12px 40px',
+                background: 'rgba(39, 39, 42, 0.8)',
+                border: '1px solid rgba(63, 63, 70, 0.5)',
                 borderRadius: 12,
-                color: '#F8FAFC',
-                fontSize: 14,
+                color: '#FAFAFA',
+                fontSize: 13,
                 outline: 'none',
                 transition: 'all 200ms ease',
                 boxSizing: 'border-box'
               }}
               onFocus={(e) => {
-                e.target.style.border = '1px solid rgba(6, 182, 212, 0.5)'
-                e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                e.target.style.border = '1px solid rgba(139, 92, 246, 0.5)'
+                e.target.style.background = 'rgba(39, 39, 42, 1)'
               }}
               onBlur={(e) => {
-                e.target.style.border = '1px solid rgba(255, 255, 255, 0.1)'
-                e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                e.target.style.border = '1px solid rgba(63, 63, 70, 0.5)'
+                e.target.style.background = 'rgba(39, 39, 42, 0.8)'
               }}
             />
           </div>
 
           <div style={{ position: 'relative' }}>
-            <Lock size={18} color="rgba(248, 250, 252, 0.5)" style={{
+            <Lock size={16} color="#71717A" style={{
               position: 'absolute',
-              left: 16,
+              left: 14,
               top: '50%',
               transform: 'translateY(-50%)',
               pointerEvents: 'none'
@@ -206,23 +206,23 @@ export default function Login() {
               required
               style={{
                 width: '100%',
-                padding: '14px 16px 14px 44px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                padding: '12px 14px 12px 40px',
+                background: 'rgba(39, 39, 42, 0.8)',
+                border: '1px solid rgba(63, 63, 70, 0.5)',
                 borderRadius: 12,
-                color: '#F8FAFC',
-                fontSize: 14,
+                color: '#FAFAFA',
+                fontSize: 13,
                 outline: 'none',
                 transition: 'all 200ms ease',
                 boxSizing: 'border-box'
               }}
               onFocus={(e) => {
-                e.target.style.border = '1px solid rgba(6, 182, 212, 0.5)'
-                e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                e.target.style.border = '1px solid rgba(139, 92, 246, 0.5)'
+                e.target.style.background = 'rgba(39, 39, 42, 1)'
               }}
               onBlur={(e) => {
-                e.target.style.border = '1px solid rgba(255, 255, 255, 0.1)'
-                e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                e.target.style.border = '1px solid rgba(63, 63, 70, 0.5)'
+                e.target.style.background = 'rgba(39, 39, 42, 0.8)'
               }}
             />
           </div>
@@ -232,12 +232,12 @@ export default function Login() {
             disabled={loading}
             style={{
               width: '100%',
-              padding: '14px',
-              background: loading ? 'rgba(6, 182, 212, 0.5)' : 'linear-gradient(135deg, #06B6D4, #3B82F6)',
+              padding: '12px',
+              background: loading ? 'rgba(139, 92, 246, 0.5)' : 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
               color: 'white',
               border: 'none',
               borderRadius: 12,
-              fontSize: 16,
+              fontSize: 14,
               fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'all 200ms ease',
@@ -249,7 +249,7 @@ export default function Login() {
             onMouseEnter={(e) => {
               if (!loading) {
                 e.target.style.transform = 'translateY(-2px)'
-                e.target.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.4)'
+                e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)'
               }
             }}
             onMouseLeave={(e) => {
@@ -259,7 +259,7 @@ export default function Login() {
           >
             {loading ? 'Carregando...' : (
               <>
-                {isSignUp ? <UserPlus size={18} /> : <LogIn size={18} />}
+                {isSignUp ? <UserPlus size={16} /> : <LogIn size={16} />}
                 {isSignUp ? 'Cadastrar' : 'Entrar'}
               </>
             )}
@@ -269,8 +269,8 @@ export default function Login() {
         <p style={{
           marginTop: 24,
           textAlign: 'center',
-          fontSize: 14,
-          color: 'rgba(248, 250, 252, 0.6)'
+          fontSize: 13,
+          color: '#71717A'
         }}>
           {isSignUp ? 'Já tem conta?' : 'Não tem conta?'}
           <button
@@ -279,9 +279,9 @@ export default function Login() {
               marginLeft: 8,
               background: 'none',
               border: 'none',
-              color: '#06B6D4',
+              color: '#8B5CF6',
               cursor: 'pointer',
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 600,
               transition: 'opacity 200ms ease'
             }}
@@ -289,7 +289,7 @@ export default function Login() {
             onMouseLeave={(e) => e.target.style.opacity = 1}
           >
             {isSignUp ? 'Faça login' : 'Cadastre-se'}
-            <ArrowRight size={14} style={{ marginLeft: 4, verticalAlign: 'middle' }} />
+            <ArrowRight size={12} style={{ marginLeft: 4, verticalAlign: 'middle' }} />
           </button>
         </p>
       </div>

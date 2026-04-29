@@ -7,53 +7,97 @@ import ChatDM from './components/ChatDM'
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   
-  if (loading) return <div>Carregando...</div>
+  if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
   
   return children
 }
 
-function AppRoutes() {
-  const { user, loading } = useAuth()
-
-  if (loading) return (
+function LoadingScreen() {
+  return (
     <div style={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
-      color: 'rgba(248, 250, 252, 0.6)',
-      fontSize: 14
+      background: '#09090B'
     }}>
       <div style={{
         padding: '16px 24px',
-        background: 'rgba(255, 255, 255, 0.05)',
+        background: 'rgba(24, 24, 27, 0.95)',
         backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
         borderRadius: 12,
-        border: '1px solid rgba(255, 255, 255, 0.1)'
+        border: '1px solid rgba(63, 63, 70, 0.5)',
+        color: '#A1A1AA',
+        fontSize: 14
       }}>
         Carregando...
       </div>
     </div>
   )
+}
+
+function AppRoutes() {
+  const { user, loading } = useAuth()
+
+  if (loading) return <LoadingScreen />
 
   return (
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={
         <ProtectedRoute>
-          <UserList />
+          <WhatsAppLayout>
+            <UserList />
+          </WhatsAppLayout>
         </ProtectedRoute>
       } />
       <Route path="/chat/:receiverId" element={
         <ProtectedRoute>
-          <ChatDM />
+          <WhatsAppLayout>
+            <ChatDM />
+          </WhatsAppLayout>
         </ProtectedRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  )
+}
+
+function WhatsAppLayout({ children }) {
+  return (
+    <div style={{
+      display: 'flex',
+      height: '100vh',
+      width: '100vw',
+      overflow: 'hidden',
+      background: '#09090B'
+    }}>
+      {/* Sidebar - UserList */}
+      <div style={{
+        width: 380,
+        minWidth: 380,
+        height: '100vh',
+        background: 'rgba(24, 24, 27, 0.98)',
+        borderRight: '1px solid rgba(63, 63, 70, 0.5)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        <UserList />
+      </div>
+
+      {/* Main Chat Area */}
+      <div style={{
+        flex: 1,
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        {children}
+      </div>
+    </div>
   )
 }
 

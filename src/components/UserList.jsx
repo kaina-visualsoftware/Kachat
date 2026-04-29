@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Search } from 'lucide-react'
+import { LogOut, Search, MessageSquare } from 'lucide-react'
 
 export default function UserList() {
   const [users, setUsers] = useState([])
@@ -35,11 +35,11 @@ export default function UserList() {
 
   const getAvatarColor = (id) => {
     const colors = [
-      'linear-gradient(135deg, #06B6D4, #0891B2)', // Cyan
-      'linear-gradient(135deg, #3B82F6, #2563EB)', // Blue
       'linear-gradient(135deg, #8B5CF6, #7C3AED)', // Purple
+      'linear-gradient(135deg, #3B82F6, #2563EB)', // Blue
       'linear-gradient(135deg, #EC4899, #DB2777)', // Pink
       'linear-gradient(135deg, #F59E0B, #D97706)', // Amber
+      'linear-gradient(135deg, #10B981, #059669)', // Emerald
     ]
     const index = id ? id.charCodeAt(0) % colors.length : 0
     return colors[index]
@@ -49,84 +49,69 @@ export default function UserList() {
     u.username?.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (loading) return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
-      color: 'rgba(248, 250, 252, 0.6)',
-      fontSize: 14
-    }}>
-      Carregando usuários...
-    </div>
-  )
-
   return (
     <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
-      padding: 20
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'rgba(24, 24, 27, 0.98)'
     }}>
+      {/* Header */}
       <div style={{
-        maxWidth: 600,
-        margin: '0 auto'
+        padding: '20px 16px 16px',
+        borderBottom: '1px solid rgba(63, 63, 70, 0.5)'
       }}>
-        {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: 24
+          marginBottom: 16
         }}>
           <h1 style={{
             margin: 0,
-            fontSize: 28,
-            fontWeight: 600,
-            color: '#F8FAFC',
+            fontSize: 24,
+            fontWeight: 700,
+            color: '#FAFAFA',
             letterSpacing: -0.5
           }}>
-            Usuários
+            Chat
           </h1>
           <button
             onClick={signOut}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 8,
-              padding: '10px 16px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 12,
-              color: 'rgba(248, 250, 252, 0.8)',
-              fontSize: 14,
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              background: 'rgba(63, 63, 70, 0.3)',
+              border: '1px solid rgba(63, 63, 70, 0.5)',
+              borderRadius: 10,
+              color: '#A1A1AA',
               cursor: 'pointer',
               transition: 'all 200ms ease'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.1)'
-              e.target.style.color = '#F8FAFC'
-              e.target.style.transform = 'translateY(-2px)'
+              e.target.style.background = 'rgba(239, 68, 68, 0.15)'
+              e.target.style.color = '#EF4444'
+              e.target.style.borderColor = 'rgba(239, 68, 68, 0.3)'
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = 'rgba(255, 255, 255, 0.05)'
-              e.target.style.color = 'rgba(248, 250, 252, 0.8)'
-              e.target.style.transform = 'translateY(0)'
+              e.target.style.background = 'rgba(63, 63, 70, 0.3)'
+              e.target.style.color = '#A1A1AA'
+              e.target.style.borderColor = 'rgba(63, 63, 70, 0.5)'
             }}
+            title="Sair"
           >
             <LogOut size={16} />
-            Sair
           </button>
         </div>
 
         {/* Search Input */}
-        <div style={{ position: 'relative', marginBottom: 16 }}>
-          <Search size={18} color="rgba(248, 250, 252, 0.5)" style={{
+        <div style={{ position: 'relative' }}>
+          <Search size={16} color="#71717A" style={{
             position: 'absolute',
-            left: 16,
+            left: 12,
             top: '50%',
             transform: 'translateY(-50%)',
             pointerEvents: 'none'
@@ -138,121 +123,168 @@ export default function UserList() {
             onChange={(e) => setSearch(e.target.value)}
             style={{
               width: '100%',
-              padding: '14px 16px 14px 44px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 12,
-              color: '#F8FAFC',
-              fontSize: 14,
+              padding: '10px 12px 10px 36px',
+              background: 'rgba(39, 39, 42, 0.8)',
+              border: '1px solid rgba(63, 63, 70, 0.5)',
+              borderRadius: 10,
+              color: '#FAFAFA',
+              fontSize: 13,
               outline: 'none',
               transition: 'all 200ms ease',
               boxSizing: 'border-box'
             }}
             onFocus={(e) => {
-              e.target.style.border = '1px solid rgba(6, 182, 212, 0.5)'
-              e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+              e.target.style.border = '1px solid rgba(139, 92, 246, 0.5)'
+              e.target.style.background = 'rgba(39, 39, 42, 1)'
             }}
             onBlur={(e) => {
-              e.target.style.border = '1px solid rgba(255, 255, 255, 0.1)'
-              e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+              e.target.style.border = '1px solid rgba(63, 63, 70, 0.5)'
+              e.target.style.background = 'rgba(39, 39, 42, 0.8)'
             }}
           />
         </div>
+      </div>
 
-        {/* User List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {filteredUsers.length === 0 ? (
-            <div style={{
-              padding: 40,
-              textAlign: 'center',
-              background: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(10px)',
-              WebkitBackdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 16,
-              color: 'rgba(248, 250, 252, 0.6)',
-              fontSize: 14
-            }}>
-              {search ? 'Nenhum usuário encontrado' : 'Nenhum usuário disponível'}
-            </div>
-          ) : (
-            filteredUsers.map(u => (
-              <div
-                key={u.id}
-                onClick={() => startChat(u.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 16,
-                  padding: 16,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  backdropFilter: 'blur(10px)',
-                  WebkitBackdropFilter: 'blur(10px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 16,
-                  cursor: 'pointer',
-                  transition: 'all 200ms ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-                  e.currentTarget.style.transform = 'translateY(-2px)'
-                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-                  e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.boxShadow = 'none'
-                }}
-              >
-                {/* Avatar */}
-                <div style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 14,
-                  background: getAvatarColor(u.id),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: 'white',
-                  flexShrink: 0
-                }}>
-                  {getInitials(u.username)}
-                </div>
-
-                {/* User Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: 16,
-                    fontWeight: 500,
-                    color: '#F8FAFC',
-                    marginBottom: 4
-                  }}>
-                    {u.username}
-                  </div>
-                  <div style={{
-                    fontSize: 12,
-                    color: 'rgba(248, 250, 252, 0.5)'
-                  }}>
-                    Clique para conversar
-                  </div>
-                </div>
-
-                {/* Status Indicator */}
-                <div style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  background: '#22C55E', // Green for online (simplified)
-                  flexShrink: 0,
-                  boxShadow: '0 0 8px rgba(34, 197, 94, 0.5)'
-                }} />
+      {/* User List - Scrollable */}
+      <div style={{
+        flex: 1,
+        overflowY: 'scroll',
+        padding: '8px 8px'
+      }}>
+        {loading ? (
+          <div style={{
+            padding: 20,
+            textAlign: 'center',
+            color: '#71717A',
+            fontSize: 13
+          }}>
+            Carregando usuários...
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div style={{
+            padding: '40px 20px',
+            textAlign: 'center',
+            color: '#71717A',
+            fontSize: 13
+          }}>
+            {search ? 'Nenhum usuário encontrado' : 'Nenhum usuário disponível'}
+          </div>
+        ) : (
+          filteredUsers.map(u => (
+            <div
+              key={u.id}
+              onClick={() => startChat(u.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px',
+                marginBottom: 4,
+                borderRadius: 12,
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+                background: 'transparent'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(63, 63, 70, 0.3)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              {/* Avatar */}
+              <div style={{
+                width: 44,
+                height: 44,
+                borderRadius: 14,
+                background: getAvatarColor(u.id),
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 16,
+                fontWeight: 600,
+                color: 'white',
+                flexShrink: 0
+              }}>
+                {getInitials(u.username)}
               </div>
-            ))
-          )}
+
+              {/* User Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#FAFAFA',
+                  marginBottom: 2,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {u.username}
+                </div>
+                <div style={{
+                  fontSize: 12,
+                  color: '#71717A',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6
+                }}>
+                  <MessageSquare size={12} />
+                  Clique para conversar
+                </div>
+              </div>
+
+              {/* Status Indicator */}
+              <div style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: '#10B981',
+                flexShrink: 0,
+                boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)'
+              }} />
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer com info do usuário logado */}
+      <div style={{
+        padding: 16,
+        borderTop: '1px solid rgba(63, 63, 70, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12
+      }}>
+        <div style={{
+          width: 36,
+          height: 36,
+          borderRadius: 10,
+          background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 14,
+          fontWeight: 600,
+          color: 'white',
+          flexShrink: 0
+        }}>
+          {getInitials(user?.email || 'U')}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 13,
+            fontWeight: 500,
+            color: '#FAFAFA',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}>
+            {user?.email}
+          </div>
+          <div style={{ fontSize: 11, color: '#71717A' }}>
+            Online
+          </div>
         </div>
       </div>
     </div>
