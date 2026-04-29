@@ -16,7 +16,28 @@ function ProtectedRoute({ children }) {
 function AppRoutes() {
   const { user, loading } = useAuth()
 
-  if (loading) return <div style={{ textAlign: 'center', marginTop: 50 }}>Carregando...</div>
+  if (loading) return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
+      color: 'rgba(248, 250, 252, 0.6)',
+      fontSize: 14
+    }}>
+      <div style={{
+        padding: '16px 24px',
+        background: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        borderRadius: 12,
+        border: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        Carregando...
+      </div>
+    </div>
+  )
 
   return (
     <Routes>

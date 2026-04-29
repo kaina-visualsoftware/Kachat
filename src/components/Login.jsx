@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { Mail, Lock, User, LogIn, UserPlus, ArrowRight } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -8,72 +9,290 @@ export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
   const { signUp, signIn } = useAuth()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setMessage('')
+    setLoading(true)
 
     try {
       if (isSignUp) {
         const { error } = await signUp(email, password, username)
         if (error) throw error
-        setMessage('Cadastro realizado! Verifique seu email para confirmar.')
+        setMessage('Cadastro realizado! Verifique seu email.')
       } else {
         const { error } = await signIn(email, password)
         if (error) throw error
       }
     } catch (err) {
       setError(err.message)
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: '100px auto', padding: 20 }}>
-      <h1>{isSignUp ? 'Cadastro' : 'Login'}</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {isSignUp && (
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={e => setUsername(e.target.value)}
-            required
-            style={{ padding: 8 }}
-          />
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)',
+      padding: 20
+    }}>
+      <div style={{
+        width: '100%',
+        maxWidth: 420,
+        padding: 40,
+        background: 'rgba(255, 255, 255, 0.05)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        borderRadius: 20,
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 60,
+            height: 60,
+            margin: '0 auto 16px',
+            borderRadius: 16,
+            background: 'linear-gradient(135deg, #06B6D4, #3B82F6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <LogIn size={28} color="white" />
+          </div>
+          <h1 style={{
+            margin: 0,
+            fontSize: 28,
+            fontWeight: 600,
+            color: '#F8FAFC',
+            letterSpacing: -0.5
+          }}>
+            {isSignUp ? 'Criar Conta' : 'Bem-vindo'}
+          </h1>
+          <p style={{
+            margin: '8px 0 0',
+            fontSize: 14,
+            color: 'rgba(248, 250, 252, 0.6)'
+          }}>
+            {isSignUp ? 'Preencha os dados abaixo' : 'Entre para continuar'}
+          </p>
+        </div>
+
+        {error && (
+          <div style={{
+            padding: '12px 16px',
+            marginBottom: 20,
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 12,
+            color: '#FCA5A5',
+            fontSize: 14
+          }}>
+            {error}
+          </div>
         )}
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          required
-          style={{ padding: 8 }}
-        />
-        <input
-          type="password"
-          placeholder="Senha"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-          required
-          style={{ padding: 8 }}
-        />
-        <button type="submit" style={{ padding: 10, background: '#007bff', color: 'white', border: 'none' }}>
-          {isSignUp ? 'Cadastrar' : 'Entrar'}
-        </button>
-      </form>
-      <p style={{ marginTop: 10 }}>
-        {isSignUp ? 'Já tem conta?' : 'Não tem conta?'}
-        <button 
-          onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage('') }} 
-          style={{ marginLeft: 5, background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}
-        >
-          {isSignUp ? 'Faça login' : 'Cadastre-se'}
-        </button>
-      </p>
+
+        {message && (
+          <div style={{
+            padding: '12px 16px',
+            marginBottom: 20,
+            background: 'rgba(34, 197, 94, 0.1)',
+            border: '1px solid rgba(34, 197, 94, 0.3)',
+            borderRadius: 12,
+            color: '#86EFAC',
+            fontSize: 14
+          }}>
+            {message}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {isSignUp && (
+            <div style={{ position: 'relative' }}>
+              <User size={18} color="rgba(248, 250, 252, 0.5)" style={{
+                position: 'absolute',
+                left: 16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none'
+              }} />
+              <input
+                type="text"
+                placeholder="Username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '14px 16px 14px 44px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 12,
+                  color: '#F8FAFC',
+                  fontSize: 14,
+                  outline: 'none',
+                  transition: 'all 200ms ease',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => {
+                  e.target.style.border = '1px solid rgba(6, 182, 212, 0.5)'
+                  e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+                }}
+                onBlur={(e) => {
+                  e.target.style.border = '1px solid rgba(255, 255, 255, 0.1)'
+                  e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+                }}
+              />
+            </div>
+          )}
+
+          <div style={{ position: 'relative' }}>
+            <Mail size={18} color="rgba(248, 250, 252, 0.5)" style={{
+              position: 'absolute',
+              left: 16,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              pointerEvents: 'none'
+            }} />
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '14px 16px 14px 44px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 12,
+                color: '#F8FAFC',
+                fontSize: 14,
+                outline: 'none',
+                transition: 'all 200ms ease',
+                boxSizing: 'border-box'
+              }}
+              onFocus={(e) => {
+                e.target.style.border = '1px solid rgba(6, 182, 212, 0.5)'
+                e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+              }}
+              onBlur={(e) => {
+                e.target.style.border = '1px solid rgba(255, 255, 255, 0.1)'
+                e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+              }}
+            />
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <Lock size={18} color="rgba(248, 250, 252, 0.5)" style={{
+              position: 'absolute',
+              left: 16,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              pointerEvents: 'none'
+            }} />
+            <input
+              type="password"
+              placeholder="Senha"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              style={{
+                width: '100%',
+                padding: '14px 16px 14px 44px',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 12,
+                color: '#F8FAFC',
+                fontSize: 14,
+                outline: 'none',
+                transition: 'all 200ms ease',
+                boxSizing: 'border-box'
+              }}
+              onFocus={(e) => {
+                e.target.style.border = '1px solid rgba(6, 182, 212, 0.5)'
+                e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+              }}
+              onBlur={(e) => {
+                e.target.style.border = '1px solid rgba(255, 255, 255, 0.1)'
+                e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+              }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '14px',
+              background: loading ? 'rgba(6, 182, 212, 0.5)' : 'linear-gradient(135deg, #06B6D4, #3B82F6)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 12,
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 200ms ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.target.style.transform = 'translateY(-2px)'
+                e.target.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.4)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)'
+              e.target.style.boxShadow = 'none'
+            }}
+          >
+            {loading ? 'Carregando...' : (
+              <>
+                {isSignUp ? <UserPlus size={18} /> : <LogIn size={18} />}
+                {isSignUp ? 'Cadastrar' : 'Entrar'}
+              </>
+            )}
+          </button>
+        </form>
+
+        <p style={{
+          marginTop: 24,
+          textAlign: 'center',
+          fontSize: 14,
+          color: 'rgba(248, 250, 252, 0.6)'
+        }}>
+          {isSignUp ? 'Já tem conta?' : 'Não tem conta?'}
+          <button
+            onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage('') }}
+            style={{
+              marginLeft: 8,
+              background: 'none',
+              border: 'none',
+              color: '#06B6D4',
+              cursor: 'pointer',
+              fontSize: 14,
+              fontWeight: 600,
+              transition: 'opacity 200ms ease'
+            }}
+            onMouseEnter={(e) => e.target.style.opacity = 0.7}
+            onMouseLeave={(e) => e.target.style.opacity = 1}
+          >
+            {isSignUp ? 'Faça login' : 'Cadastre-se'}
+            <ArrowRight size={14} style={{ marginLeft: 4, verticalAlign: 'middle' }} />
+          </button>
+        </p>
+      </div>
     </div>
   )
 }

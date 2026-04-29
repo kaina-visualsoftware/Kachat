@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Send, Circle } from 'lucide-react'
 
 export default function ChatDM() {
   const { receiverId } = useParams()
@@ -11,7 +12,7 @@ export default function ChatDM() {
   const [input, setInput] = useState('')
   const [receiverName, setReceiverName] = useState('')
   const [currentUserName, setCurrentUserName] = useState('')
-  const [status, setStatus] = useState('Conectando...')
+  const [status, setStatus] = useState('connecting')
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
@@ -21,7 +22,6 @@ export default function ChatDM() {
     loadReceiverName()
     loadCurrentUserName()
 
-    // Inscrição Realtime para DMs (escuta ambas as direções)
     const channel = supabase.channel(`dm_${[user.id, receiverId].sort().join('_')}`)
       .on('postgres_changes', 
         { 
@@ -31,19 +31,16 @@ export default function ChatDM() {
         },
         (payload) => {
           const msg = payload.new
-          // Filtra apenas mensagens entre os dois usuários
           const isRelevant = 
             (msg.sender_id === user.id && msg.receiver_id === receiverId) ||
             (msg.sender_id === receiverId && msg.receiver_id === user.id)
           
           if (isRelevant) {
-            console.log('Nova DM recebida:', payload)
             setMessages(prev => [...prev, msg])
           }
         }
       )
       .subscribe((status) => {
-        console.log('Status Realtime DM:', status)
         setStatus(status)
       })
 
@@ -109,57 +106,162 @@ export default function ChatDM() {
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 20, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-        <button onClick={() => navigate('/')} style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: 5, background: 'white', cursor: 'pointer' }}>← Voltar</button>
-        <h2 style={{ margin: 0 }}>{receiverName || 'Carregando...'}</h2>
-        <div style={{ 
-          padding: '5px 10px', 
-          borderRadius: 5,
-          backgroundColor: status === 'SUBSCRIBED' ? '#d4edda' : '#f8d7da',
-          color: status === 'SUBSCRIBED' ? '#155724' : '#721c24',
-          fontSize: 12
-        }}>
-          {status === 'SUBSCRIBED' ? '✓ Online' : '⚠ Offline'}
+    <div style={{
+      height: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%)'
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '16px 20px',
+        background: 'rgba(255, 255, 255, 0.03)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        <button
+          onClick={() => navigate('/')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 40,
+            height: 40,
+            background: 'rgba(255, 255, 255, 0.05)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: 12,
+            color: 'rgba(248, 250, 252, 0.8)',
+            cursor: 'pointer',
+            transition: 'all 200ms ease'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(255, 255, 255, 0.1)'
+            e.target.style.color = '#F8FAFC'
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+            e.target.style.color = 'rgba(248, 250, 252, 0.8)'
+          }}
+        >
+          <ArrowLeft size={18} />
+        </button>
+
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontSize: 16,
+            fontWeight: 600,
+            color: '#F8FAFC'
+          }}>
+            {receiverName || 'Carregando...'}
+          </div>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            fontSize: 12,
+            color: 'rgba(248, 250, 252, 0.5)'
+          }}>
+            <Circle 
+              size={8} 
+              color={status === 'SUBSCRIBED' ? '#22C55E' : '#94A3B8'} 
+              fill={status === 'SUBSCRIBED' ? '#22C55E' : '#94A3B8'} 
+            />
+            {status === 'SUBSCRIBED' ? 'Online' : 'Conectando...'}
+          </div>
         </div>
       </div>
-      <div style={{ flex: 1, border: '1px solid #e0e0e0', borderRadius: 10, padding: 15, overflowY: 'scroll', marginBottom: 15, background: '#f8f9fa' }}>
+
+      {/* Messages Area */}
+      <div style={{
+        flex: 1,
+        overflowY: 'scroll',
+        padding: 20,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16
+      }}>
         {messages.length === 0 ? (
-          <p style={{ color: '#999', textAlign: 'center', marginTop: 50 }}>Nenhuma mensagem ainda. Seja o primeiro a enviar!</p>
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'rgba(248, 250, 252, 0.4)',
+            fontSize: 14,
+            textAlign: 'center',
+            padding: 40
+          }}>
+            Nenhuma mensagem ainda.<br />Seja o primeiro a enviar!
+          </div>
         ) : (
-          messages.map(m => {
+          messages.map((m, index) => {
             const isMe = m.sender_id === user.id
             return (
-              <div 
-                key={m.id} 
-                style={{ 
-                  margin: '12px 0', 
-                  textAlign: isMe ? 'right' : 'left'
+              <div
+                key={m.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: isMe ? 'flex-end' : 'flex-start',
+                  animation: 'fadeInUp 300ms ease forwards',
+                  opacity: 0,
+                  animationDelay: `${index * 50}ms`,
+                  animationFillMode: 'forwards'
                 }}
               >
-                <div style={{ 
+                {/* Sender Name */}
+                <div style={{
                   fontSize: 12,
-                  color: '#666',
-                  marginBottom: 4,
                   fontWeight: 500,
-                  paddingLeft: isMe ? 0 : 8,
-                  paddingRight: isMe ? 8 : 0
+                  color: 'rgba(248, 250, 252, 0.5)',
+                  marginBottom: 6,
+                  paddingLeft: isMe ? 0 : 12,
+                  paddingRight: isMe ? 12 : 0
                 }}>
                   {getSenderName(m)}
                 </div>
-                <div style={{ 
-                  display: 'inline-block',
-                  background: isMe ? 'linear-gradient(135deg, #007bff, #0056b3)' : 'white',
-                  color: isMe ? 'white' : '#333',
-                  padding: '10px 15px',
-                  borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+
+                {/* Message Bubble */}
+                <div style={{
                   maxWidth: '70%',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  padding: '12px 16px',
+                  background: isMe 
+                    ? 'rgba(6, 182, 212, 0.15)' 
+                    : 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  border: '1px solid',
+                  borderColor: isMe 
+                    ? 'rgba(6, 182, 212, 0.2)' 
+                    : 'rgba(255, 255, 255, 0.1)',
+                  borderLeft: `3px solid ${isMe ? '#06B6D4' : 'transparent'}`,
+                  borderRadius: 16,
+                  borderTopRightRadius: isMe ? 4 : 16,
+                  borderTopLeftRadius: isMe ? 16 : 4,
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
                   wordWrap: 'break-word'
                 }}>
-                  {m.content}
-                  <div style={{ fontSize: 10, opacity: 0.7, marginTop: 5, textAlign: 'right' }}>
-                    {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  <div style={{
+                    fontSize: 14,
+                    color: '#F8FAFC',
+                    lineHeight: 1.5,
+                    marginBottom: 8
+                  }}>
+                    {m.content}
+                  </div>
+                  <div style={{
+                    fontSize: 11,
+                    color: 'rgba(248, 250, 252, 0.4)',
+                    textAlign: 'right'
+                  }}>
+                    {new Date(m.created_at).toLocaleTimeString('pt-BR', { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
                   </div>
                 </div>
               </div>
@@ -168,17 +270,88 @@ export default function ChatDM() {
         )}
         <div ref={messagesEndRef} />
       </div>
-      <form onSubmit={sendMessage} style={{ display: 'flex', gap: 10 }}>
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Digite sua mensagem..."
-          style={{ flex: 1, padding: 12, borderRadius: 25, border: '1px solid #ccc', fontSize: 14 }}
-        />
-        <button type="submit" style={{ padding: '12px 24px', background: '#007bff', color: 'white', border: 'none', borderRadius: 25, fontWeight: 'bold', cursor: 'pointer' }}>
-          Enviar
-        </button>
-      </form>
+
+      {/* Input Area */}
+      <div style={{
+        padding: 20,
+        background: 'rgba(255, 255, 255, 0.03)',
+        backdropFilter: 'blur(10px)',
+        WebkitBackdropFilter: 'blur(10px)',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+      }}>
+        <form onSubmit={sendMessage} style={{ display: 'flex', gap: 12 }}>
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Digite sua mensagem..."
+            style={{
+              flex: 1,
+              padding: '14px 16px',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 14,
+              color: '#F8FAFC',
+              fontSize: 14,
+              outline: 'none',
+              transition: 'all 200ms ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.border = '1px solid rgba(6, 182, 212, 0.5)'
+              e.target.style.background = 'rgba(255, 255, 255, 0.08)'
+            }}
+            onBlur={(e) => {
+              e.target.style.border = '1px solid rgba(255, 255, 255, 0.1)'
+              e.target.style.background = 'rgba(255, 255, 255, 0.05)'
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 48,
+              height: 48,
+              background: input.trim() 
+                ? 'linear-gradient(135deg, #06B6D4, #3B82F6)' 
+                : 'rgba(255, 255, 255, 0.05)',
+              border: 'none',
+              borderRadius: 14,
+              color: 'white',
+              cursor: input.trim() ? 'pointer' : 'not-allowed',
+              transition: 'all 200ms ease',
+              opacity: input.trim() ? 1 : 0.5
+            }}
+            onMouseEnter={(e) => {
+              if (input.trim()) {
+                e.target.style.transform = 'translateY(-2px)'
+                e.target.style.boxShadow = '0 4px 12px rgba(6, 182, 212, 0.4)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)'
+              e.target.style.boxShadow = 'none'
+            }}
+          >
+            <Send size={18} />
+          </button>
+        </form>
+      </div>
+
+      {/* Animation Keyframes */}
+      <style>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   )
 }
