@@ -14,10 +14,21 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Políticas de perfis
+DROP POLICY IF EXISTS "profiles_viewable" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
+
 CREATE POLICY "profiles_viewable" ON public.profiles 
   FOR SELECT TO authenticated USING (true);
+
 CREATE POLICY "profiles_update_own" ON public.profiles 
-  FOR UPDATE TO authenticated USING (auth.uid() = id);
+  FOR UPDATE TO authenticated 
+  USING (auth.uid() = id) 
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "profiles_insert_own" ON public.profiles 
+  FOR INSERT TO authenticated 
+  WITH CHECK (auth.uid() = id);
 
 -- 3. Trigger para criar perfil automaticamente no cadastro
 CREATE OR REPLACE FUNCTION public.handle_new_user() 
@@ -73,7 +84,32 @@ CREATE POLICY "Users can upload their own avatar"
 
 CREATE POLICY "Users can update their own avatar" 
   ON storage.objects FOR UPDATE USING (
-    auth.uid()::text = owner
+    auth.uid() = owner
+  );
+
+-- 7. Criar bucket dedicado para arquivos do chat
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('chat-files', 'chat-files', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas de acesso para chat-files
+CREATE POLICY "Arquivos do chat são públicos" 
+  ON storage.objects FOR SELECT USING (bucket_id = 'chat-files');
+
+CREATE POLICY "Usuários podem fazer upload" 
+  ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'chat-files' AND 
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Usuários podem deletar próprios arquivos" 
+  ON storage.objects FOR DELETE USING (
+    auth.uid() = owner
+  );
+
+CREATE POLICY "Users can update their own chat files" 
+  ON storage.objects FOR UPDATE USING (
+    auth.uid() = owner
   );
 
 -- 7. Ativar Realtime no Dashboard (após rodar este SQL):

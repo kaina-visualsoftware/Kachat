@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Send, Circle, MessageSquare } from 'lucide-react'
-import { extractYouTubeVideoId, renderTextWithLinks } from '../utils/linkDetector.jsx'
+import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X } from 'lucide-react'
+import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage } from '../utils/linkDetector.jsx'
 import LiteYouTubeEmbed from 'react-lite-youtube-embed'
 import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
@@ -17,6 +17,12 @@ export default function ChatDM() {
   const [currentUserName, setCurrentUserName] = useState('')
   const [status, setStatus] = useState('connecting')
   const messagesEndRef = useRef(null)
+  
+  // File upload states
+  const [selectedFiles, setSelectedFiles] = useState([])
+  const [previews, setPreviews] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (!user || !receiverId) return
@@ -97,6 +103,66 @@ export default function ChatDM() {
     }
   }
 
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    
+    // Validate file sizes (max 100MB each)
+    const maxSize = 100 * 1024 * 1024
+    const invalid = files.filter(f => f.size > maxSize)
+    if (invalid.length > 0) {
+      alert(`Arquivos muito grandes (máx 100MB): ${invalid.map(f => f.name).join(', ')}`)
+      return
+    }
+    
+    setSelectedFiles(files)
+    
+    // Create preview URLs for images
+    const newPreviews = files.map(file => ({
+      file,
+      url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    }))
+    
+    setPreviews(newPreviews)
+  }
+
+  const sendFiles = async () => {
+    if (selectedFiles.length === 0) return
+    
+    setUploading(true)
+    try {
+      const result = await uploadChatFiles(selectedFiles, receiverId)
+      if (result.error) throw result.error
+      
+      // Send a message for each file
+      for (const fileData of result.data) {
+        const messageContent = `[file]${fileData.url}|${fileData.fileName}|${fileData.fileType}|${fileData.fileSize}[/file]`
+        
+        await supabase.from('direct_messages').insert({
+          sender_id: user.id,
+          receiver_id: receiverId,
+          content: messageContent
+        })
+      }
+      
+      // Clear selection
+      setSelectedFiles([])
+      setPreviews([])
+      // Revoke preview URLs
+      previews.forEach(p => {
+        if (p.url) URL.revokeObjectURL(p.url)
+      })
+    } catch (error) {
+      alert('Erro no upload: ' + error.message)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -113,6 +179,73 @@ export default function ChatDM() {
   }
 
   const renderMessageContent = (content, isMe) => {
+    // First check if it's a file message
+    const fileData = parseFileMessage(content)
+    if (fileData) {
+      const { url, fileName, fileType, fileSize } = fileData
+      
+      // Image or GIF: show inline
+      if (fileType.startsWith('image/')) {
+        return (
+          <div style={{ marginTop: 8, maxWidth: 300 }}>
+            <img 
+              src={url} 
+              alt={fileName}
+              style={{ 
+                maxWidth: '100%', 
+                borderRadius: 12,
+                cursor: 'pointer'
+              }}
+              onClick={() => window.open(url, '_blank')}
+            />
+            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4, color: isMe ? '#BFDBFE' : '#818CF8' }}>
+              {fileName} ({(fileSize / 1024).toFixed(1)} KB)
+            </div>
+          </div>
+        )
+      }
+      
+      // Video
+      if (fileType.startsWith('video/')) {
+        return (
+          <video controls style={{ maxWidth: 300, borderRadius: 12, marginTop: 8 }}>
+            <source src={url} type={fileType} />
+          </video>
+        )
+      }
+      
+      // Generic file download
+      return (
+        <a
+          href={url}
+          download={fileName}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '12px 16px',
+            background: 'rgba(139, 92, 246, 0.1)',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            borderRadius: 12,
+            color: isMe ? '#BFDBFE' : '#818CF8',
+            textDecoration: 'none',
+            marginTop: 8
+          }}
+        >
+          <Download size={16} />
+          <div>
+            <div style={{ fontWeight: 500 }}>{fileName}</div>
+            <div style={{ fontSize: 11, opacity: 0.7 }}>
+              {(fileSize / 1024).toFixed(1)} KB
+            </div>
+          </div>
+        </a>
+      )
+    }
+    
+    // Otherwise render as text with links/YouTube
     const renderedParts = renderTextWithLinks(content, isMe)
     
     if (!Array.isArray(renderedParts)) {
@@ -345,8 +478,8 @@ export default function ChatDM() {
             )
           })
         )}
-        <div ref={messagesEndRef} />
-      </div>
+      <div ref={messagesEndRef} />
+       </div>
 
       {/* Input Area */}
       <div style={{
@@ -354,7 +487,168 @@ export default function ChatDM() {
         background: 'rgba(24, 24, 27, 0.98)',
         borderTop: '1px solid rgba(63, 63, 70, 0.5)'
       }}>
+        {/* File Preview UI */}
+        {previews.length > 0 && (
+          <div style={{
+            padding: 12,
+            background: 'rgba(39, 39, 42, 0.8)',
+            borderRadius: 12,
+            marginBottom: 12,
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+            maxHeight: 200,
+            overflowY: 'auto'
+          }}>
+            {previews.map((preview, index) => (
+              <div key={index} style={{
+                position: 'relative',
+                width: preview.url ? 100 : 'auto',
+                borderRadius: 8,
+                overflow: 'hidden',
+                background: 'rgba(63, 63, 70, 0.5)',
+                padding: preview.url ? 0 : 8
+              }}>
+                {preview.url ? (
+                  <>
+                    <img 
+                      src={preview.url} 
+                      alt={preview.name}
+                      style={{ width: '100%', height: 80, objectFit: 'cover' }}
+                    />
+                    <div style={{
+                      padding: '4px 8px',
+                      fontSize: 10,
+                      color: '#A1A1AA',
+                      background: 'rgba(0, 0, 0, 0.5)'
+                    }}>
+                      {(preview.size / 1024).toFixed(1)} KB
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: 8 }}>
+                    <FileText size={16} color="#A78BFA" />
+                    <div>
+                      <div style={{ fontSize: 12, color: '#FAFAFA' }}>{preview.name}</div>
+                      <div style={{ fontSize: 10, color: '#71717A' }}>
+                        {(preview.size / 1024).toFixed(1)} KB
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={() => {
+                    const newPreviews = previews.filter((_, i) => i !== index)
+                    setPreviews(newPreviews)
+                    setSelectedFiles(newPreviews.map(p => p.file))
+                    if (preview.url) URL.revokeObjectURL(preview.url)
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 4,
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    background: 'rgba(239, 68, 68, 0.8)',
+                    border: 'none',
+                    color: 'white',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+
+            {/* Send Files Button */}
+            <div style={{ width: '100%', marginTop: 8, display: 'flex', gap: 8 }}>
+              <button
+                onClick={sendFiles}
+                disabled={uploading}
+                style={{
+                  flex: 1,
+                  padding: '8px 16px',
+                  background: uploading ? 'rgba(139, 92, 246, 0.5)' : 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+                  border: 'none',
+                  borderRadius: 8,
+                  color: 'white',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: uploading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {uploading ? 'Enviando...' : `Enviar ${previews.length} arquivo(s)`}
+              </button>
+              <button
+                onClick={() => {
+                  previews.forEach(p => {
+                    if (p.url) URL.revokeObjectURL(p.url)
+                  })
+                  setPreviews([])
+                  setSelectedFiles([])
+                }}
+                style={{
+                  padding: '8px 16px',
+                  background: 'rgba(63, 63, 70, 0.5)',
+                  border: '1px solid rgba(63, 63, 70, 0.8)',
+                  borderRadius: 8,
+                  color: '#A1A1AA',
+                  fontSize: 13,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={sendMessage} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+            accept="*/*"
+          />
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 44,
+              height: 44,
+              background: uploading ? 'rgba(63, 63, 70, 0.3)' : 'rgba(139, 92, 246, 0.1)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: 12,
+              color: uploading ? '#71717A' : '#A78BFA',
+              cursor: uploading ? 'not-allowed' : 'pointer',
+              transition: 'all 200ms ease',
+              opacity: uploading ? 0.5 : 1,
+              flexShrink: 0
+            }}
+            onMouseEnter={(e) => {
+              if (!uploading) {
+                e.target.style.background = 'rgba(139, 92, 246, 0.2)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = uploading ? 'rgba(63, 63, 70, 0.3)' : 'rgba(139, 92, 246, 0.1)'
+            }}
+          >
+            <Upload size={16} />
+          </button>
+
           <input
             value={input}
             onChange={e => setInput(e.target.value)}

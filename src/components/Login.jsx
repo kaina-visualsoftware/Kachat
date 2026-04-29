@@ -23,6 +23,9 @@ export default function Login() {
         const { error } = await signUp(email, password, username)
         if (error) throw error
         setMessage('Cadastro realizado! Verifique seu email.')
+        setEmail('')
+        setPassword('')
+        setUsername('')
       } else {
         const { error } = await signIn(email, password)
         if (error) throw error

@@ -47,3 +47,20 @@ export function renderTextWithLinks(text, isMe) {
     return { type: 'text', content: part, key: index };
   }).filter(Boolean);
 }
+
+export function parseFileMessage(content) {
+  const fileRegex = /\[file\](.*?)\|(.*?)\|(.*?)\|(\d+)\[\/file\]/
+  const match = content.match(fileRegex);
+  
+  if (!match) return null;
+  
+  const [_, url, fileName, fileType, fileSize] = match;
+  
+  return {
+    type: 'file',
+    url,
+    fileName,
+    fileType,
+    fileSize: parseInt(fileSize)
+  }
+}
