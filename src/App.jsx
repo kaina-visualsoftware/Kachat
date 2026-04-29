@@ -69,15 +69,17 @@ function WhatsAppLayout({ children }) {
     <div style={{
       display: 'flex',
       height: '100vh',
-      width: '100vw',
+      width: '100%',
       overflow: 'hidden',
-      background: '#09090B'
+      background: '#09090B',
+      margin: 0,
+      padding: 0
     }}>
       {/* Sidebar - UserList */}
       <div style={{
         width: 380,
         minWidth: 380,
-        height: '100vh',
+        height: '100%',
         background: 'rgba(24, 24, 27, 0.98)',
         borderRight: '1px solid rgba(63, 63, 70, 0.5)',
         display: 'flex',
@@ -90,7 +92,7 @@ function WhatsAppLayout({ children }) {
       {/* Main Chat Area */}
       <div style={{
         flex: 1,
-        height: '100vh',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden'

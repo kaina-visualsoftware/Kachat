@@ -49,12 +49,28 @@ export default function UserList() {
     u.username?.toLowerCase().includes(search.toLowerCase())
   )
 
+  if (loading) return (
+    <div style={{
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'rgba(24, 24, 27, 0.98)',
+      color: '#71717A',
+      fontSize: 13
+    }}>
+      Carregando usuários...
+    </div>
+  )
+
   return (
     <div style={{
-      height: '100vh',
+      height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      background: 'rgba(24, 24, 27, 0.98)'
+      background: 'rgba(24, 24, 27, 0.98)',
+      margin:0,
+      padding:0
     }}>
       {/* Header */}
       <div style={{
@@ -151,16 +167,7 @@ export default function UserList() {
         overflowY: 'scroll',
         padding: '8px 8px'
       }}>
-        {loading ? (
-          <div style={{
-            padding: 20,
-            textAlign: 'center',
-            color: '#71717A',
-            fontSize: 13
-          }}>
-            Carregando usuários...
-          </div>
-        ) : filteredUsers.length === 0 ? (
+        {filteredUsers.length === 0 ? (
           <div style={{
             padding: '40px 20px',
             textAlign: 'center',

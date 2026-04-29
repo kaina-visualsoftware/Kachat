@@ -111,10 +111,13 @@ export default function ChatDM() {
 
   return (
     <div style={{
-      height: '100vh',
+      height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      background: '#09090B'
+      background: '#09090B',
+      margin: 0,
+      padding: 0,
+      overflow: 'hidden'
     }}>
       {/* Header */}
       <div style={{
