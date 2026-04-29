@@ -10,6 +10,7 @@ export default function ChatDM() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [receiverName, setReceiverName] = useState('')
+  const [currentUserName, setCurrentUserName] = useState('')
   const [status, setStatus] = useState('Conectando...')
   const messagesEndRef = useRef(null)
 
@@ -18,19 +19,27 @@ export default function ChatDM() {
 
     loadMessages()
     loadReceiverName()
+    loadCurrentUserName()
 
-    // Inscrição Realtime para DMs
+    // Inscrição Realtime para DMs (escuta ambas as direções)
     const channel = supabase.channel(`dm_${[user.id, receiverId].sort().join('_')}`)
       .on('postgres_changes', 
         { 
           event: 'INSERT', 
           schema: 'public', 
-          table: 'direct_messages',
-          filter: `sender_id=eq.${user.id},receiver_id=eq.${receiverId}`
+          table: 'direct_messages'
         },
         (payload) => {
-          console.log('Nova DM recebida:', payload)
-          setMessages(prev => [...prev, payload.new])
+          const msg = payload.new
+          // Filtra apenas mensagens entre os dois usuários
+          const isRelevant = 
+            (msg.sender_id === user.id && msg.receiver_id === receiverId) ||
+            (msg.sender_id === receiverId && msg.receiver_id === user.id)
+          
+          if (isRelevant) {
+            console.log('Nova DM recebida:', payload)
+            setMessages(prev => [...prev, msg])
+          }
         }
       )
       .subscribe((status) => {
@@ -63,6 +72,16 @@ export default function ChatDM() {
     if (data) setReceiverName(data.username)
   }
 
+  const loadCurrentUserName = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .single()
+    
+    if (data) setCurrentUserName(data.username)
+  }
+
   const sendMessage = async (e) => {
     e.preventDefault()
     if (!input.trim()) return
@@ -82,47 +101,70 @@ export default function ChatDM() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  const getSenderName = (message) => {
+    if (message.sender_id === user.id) {
+      return currentUserName || 'Você'
+    }
+    return receiverName || 'Contato'
+  }
+
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: 20, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <button onClick={() => navigate('/')} style={{ padding: '8px 16px' }}>← Voltar</button>
-        <h2 style={{ margin: 0 }}>Chat com {receiverName || '...'}</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+        <button onClick={() => navigate('/')} style={{ padding: '8px 16px', border: '1px solid #ccc', borderRadius: 5, background: 'white', cursor: 'pointer' }}>← Voltar</button>
+        <h2 style={{ margin: 0 }}>{receiverName || 'Carregando...'}</h2>
         <div style={{ 
           padding: '5px 10px', 
           borderRadius: 5,
           backgroundColor: status === 'SUBSCRIBED' ? '#d4edda' : '#f8d7da',
-          color: status === 'SUBSCRIBED' ? '#155724' : '#721c24'
+          color: status === 'SUBSCRIBED' ? '#155724' : '#721c24',
+          fontSize: 12
         }}>
-          {status === 'SUBSCRIBED' ? '✓' : '⚠'}
+          {status === 'SUBSCRIBED' ? '✓ Online' : '⚠ Offline'}
         </div>
       </div>
-      <div style={{ flex: 1, border: '1px solid #ccc', borderRadius: 5, padding: 10, overflowY: 'scroll', marginBottom: 10 }}>
+      <div style={{ flex: 1, border: '1px solid #e0e0e0', borderRadius: 10, padding: 15, overflowY: 'scroll', marginBottom: 15, background: '#f8f9fa' }}>
         {messages.length === 0 ? (
-          <p style={{ color: '#999', textAlign: 'center' }}>Nenhuma mensagem ainda</p>
+          <p style={{ color: '#999', textAlign: 'center', marginTop: 50 }}>Nenhuma mensagem ainda. Seja o primeiro a enviar!</p>
         ) : (
-          messages.map(m => (
-            <div 
-              key={m.id} 
-              style={{ 
-                margin: '5px 0', 
-                textAlign: m.sender_id === user.id ? 'right' : 'left'
-              }}
-            >
-              <div style={{ 
-                display: 'inline-block',
-                background: m.sender_id === user.id ? '#007bff' : '#e9ecef',
-                color: m.sender_id === user.id ? 'white' : 'black',
-                padding: '8px 12px',
-                borderRadius: 15,
-                maxWidth: '70%'
-              }}>
-                {m.content}
-                <div style={{ fontSize: 10, opacity: 0.7, marginTop: 2 }}>
-                  {new Date(m.created_at).toLocaleTimeString()}
+          messages.map(m => {
+            const isMe = m.sender_id === user.id
+            return (
+              <div 
+                key={m.id} 
+                style={{ 
+                  margin: '12px 0', 
+                  textAlign: isMe ? 'right' : 'left'
+                }}
+              >
+                <div style={{ 
+                  fontSize: 12,
+                  color: '#666',
+                  marginBottom: 4,
+                  fontWeight: 500,
+                  paddingLeft: isMe ? 0 : 8,
+                  paddingRight: isMe ? 8 : 0
+                }}>
+                  {getSenderName(m)}
+                </div>
+                <div style={{ 
+                  display: 'inline-block',
+                  background: isMe ? 'linear-gradient(135deg, #007bff, #0056b3)' : 'white',
+                  color: isMe ? 'white' : '#333',
+                  padding: '10px 15px',
+                  borderRadius: isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                  maxWidth: '70%',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                  wordWrap: 'break-word'
+                }}>
+                  {m.content}
+                  <div style={{ fontSize: 10, opacity: 0.7, marginTop: 5, textAlign: 'right' }}>
+                    {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            )
+          })
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -131,9 +173,9 @@ export default function ChatDM() {
           value={input}
           onChange={e => setInput(e.target.value)}
           placeholder="Digite sua mensagem..."
-          style={{ flex: 1, padding: 8, borderRadius: 5, border: '1px solid #ccc' }}
+          style={{ flex: 1, padding: 12, borderRadius: 25, border: '1px solid #ccc', fontSize: 14 }}
         />
-        <button type="submit" style={{ padding: '8px 16px', background: '#007bff', color: 'white', border: 'none', borderRadius: 5 }}>
+        <button type="submit" style={{ padding: '12px 24px', background: '#007bff', color: 'white', border: 'none', borderRadius: 25, fontWeight: 'bold', cursor: 'pointer' }}>
           Enviar
         </button>
       </form>
