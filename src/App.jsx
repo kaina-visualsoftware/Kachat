@@ -4,6 +4,7 @@ import Login from './components/Login'
 import UserList from './components/UserList'
 import ChatDM from './components/ChatDM'
 import EmptyState from './components/EmptyState'
+import Profile from './components/Profile'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -57,6 +58,13 @@ function AppRoutes() {
         <ProtectedRoute>
           <WhatsAppLayout>
             <ChatDM />
+          </WhatsAppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <WhatsAppLayout>
+            <Profile />
           </WhatsAppLayout>
         </ProtectedRoute>
       } />

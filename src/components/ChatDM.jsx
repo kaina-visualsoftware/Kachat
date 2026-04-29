@@ -3,6 +3,9 @@ import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Send, Circle, MessageSquare } from 'lucide-react'
+import { extractYouTubeVideoId, renderTextWithLinks } from '../utils/linkDetector.jsx'
+import LiteYouTubeEmbed from 'react-lite-youtube-embed'
+import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
 export default function ChatDM() {
   const { receiverId } = useParams()
@@ -107,6 +110,47 @@ export default function ChatDM() {
 
   const getInitials = (name) => {
     return name?.charAt(0).toUpperCase() || '?'
+  }
+
+  const renderMessageContent = (content, isMe) => {
+    const renderedParts = renderTextWithLinks(content, isMe)
+    
+    if (!Array.isArray(renderedParts)) {
+      return <span style={{ color: '#FAFAFA' }}>{content}</span>
+    }
+
+    return renderedParts.map((part) => {
+      if (part.type === 'youtube') {
+        return (
+          <div key={part.key} style={{ marginTop: 8, marginBottom: 4 }}>
+            <LiteYouTubeEmbed
+              id={part.videoId}
+              title="YouTube Video"
+              poster="maxresdefault"
+              style={{ borderRadius: 12, overflow: 'hidden' }}
+            />
+          </div>
+        )
+      } else if (part.type === 'link') {
+        return (
+          <a
+            key={part.key}
+            href={part.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: isMe ? '#BFDBFE' : '#818CF8',
+              textDecoration: 'underline',
+              wordBreak: 'break-all'
+            }}
+          >
+            {part.url}
+          </a>
+        )
+      } else {
+        return <span key={part.key} style={{ color: '#FAFAFA' }}>{part.content}</span>
+      }
+    })
   }
 
   return (
@@ -284,7 +328,7 @@ export default function ChatDM() {
                     lineHeight: 1.5,
                     marginBottom: 6
                   }}>
-                    {m.content}
+                    {renderMessageContent(m.content, isMe)}
                   </div>
                   <div style={{
                     fontSize: 10,

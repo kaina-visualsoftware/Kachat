@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Search, MessageSquare } from 'lucide-react'
+import { LogOut, Search, MessageSquare, UserCog } from 'lucide-react'
 
 export default function UserList() {
   const [users, setUsers] = useState([])
@@ -293,6 +293,36 @@ export default function UserList() {
             Online
           </div>
         </div>
+        <button
+          onClick={() => navigate('/profile')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            background: 'rgba(63, 63, 70, 0.3)',
+            border: '1px solid rgba(63, 63, 70, 0.5)',
+            borderRadius: 8,
+            color: '#A1A1AA',
+            cursor: 'pointer',
+            transition: 'all 200ms ease',
+            flexShrink: 0
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(139, 92, 246, 0.15)'
+            e.target.style.color = '#A78BFA'
+            e.target.style.borderColor = 'rgba(139, 92, 246, 0.3)'
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(63, 63, 70, 0.3)'
+            e.target.style.color = '#A1A1AA'
+            e.target.style.borderColor = 'rgba(63, 63, 70, 0.5)'
+          }}
+          title="Meu Perfil"
+        >
+          <UserCog size={14} />
+        </button>
       </div>
     </div>
   )

@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   username TEXT UNIQUE NOT NULL,
   avatar_url TEXT,
+  bio TEXT,
+  updated_at TIMESTAMP DEFAULT NOW(),
   created_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -54,5 +56,25 @@ CREATE POLICY "dms_send_own" ON public.direct_messages
 ALTER TABLE public.direct_messages REPLICA IDENTITY FULL;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.direct_messages;
 
--- 6. Ativar Realtime no Dashboard (após rodar este SQL):
+-- 6. Criar bucket no Storage para avatars
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas de Storage para avatars
+CREATE POLICY "Avatar images are publicly accessible" 
+  ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+
+CREATE POLICY "Users can upload their own avatar" 
+  ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'avatars' AND 
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can update their own avatar" 
+  ON storage.objects FOR UPDATE USING (
+    auth.uid()::text = owner
+  );
+
+-- 7. Ativar Realtime no Dashboard (após rodar este SQL):
 -- Realtime > Replication > Schema public > Ativar direct_messages
