@@ -1,38 +1,58 @@
--- Execute este SQL no Supabase SQL Editor
+-- 1. Remover tabelas antigas (opcional, faça backup se necessário)
+DROP TABLE IF EXISTS public.messages CASCADE;
 
--- 1. Criar a tabela (se ainda não existir)
-CREATE TABLE IF NOT EXISTS messages (
-  id SERIAL PRIMARY KEY,
-  content TEXT,
+-- 2. Tabela de perfis (vinculada ao Supabase Auth)
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  avatar_url TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 2. Ativar Row Level Security
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 3. Remover políticas antigas (se existirem)
-DROP POLICY IF EXISTS "allow all" ON messages;
-DROP POLICY IF EXISTS "anon_read_messages" ON messages;
+-- Políticas de perfis
+CREATE POLICY "profiles_viewable" ON public.profiles 
+  FOR SELECT TO authenticated USING (true);
+CREATE POLICY "profiles_update_own" ON public.profiles 
+  FOR UPDATE TO authenticated USING (auth.uid() = id);
 
--- 4. Criar política para SELECT (ler mensagens) - usuários anônimos
-CREATE POLICY "anon_select_messages"
-ON messages
-FOR SELECT
-TO anon
-USING (true);
+-- 3. Trigger para criar perfil automaticamente no cadastro
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, username) 
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 5. Criar política para INSERT (enviar mensagens) - usuários anônimos
-CREATE POLICY "anon_insert_messages"
-ON messages
-FOR INSERT
-TO anon
-WITH CHECK (true);
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created 
+  AFTER INSERT ON auth.users 
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 6. Configurar REPLICA IDENTITY para Realtime (opcional, mas recomendado)
-ALTER TABLE messages REPLICA IDENTITY FULL;
+-- 4. Tabela de Mensagens Diretas (DM)
+CREATE TABLE IF NOT EXISTS public.direct_messages (
+  id SERIAL PRIMARY KEY,
+  sender_id UUID REFERENCES auth.users(id) NOT NULL,
+  receiver_id UUID REFERENCES auth.users(id) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  read BOOLEAN DEFAULT FALSE
+);
 
--- IMPORTANTE: Depois de executar este SQL, vá no Dashboard:
--- 1. Menu lateral > Realtime (ícone de raio)
--- 2. Aba "Replication"
--- 3. Selecione schema "public"
--- 4. Ative o toggle da tabela "messages"
+ALTER TABLE public.direct_messages ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de DMs: usuário só vê/envia suas próprias mensagens
+CREATE POLICY "dms_read_own" ON public.direct_messages 
+  FOR SELECT TO authenticated USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+CREATE POLICY "dms_send_own" ON public.direct_messages 
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = sender_id);
+
+-- 5. Configurar Realtime para DMs
+ALTER TABLE public.direct_messages REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.direct_messages;
+
+-- 6. Ativar Realtime no Dashboard (após rodar este SQL):
+-- Realtime > Replication > Schema public > Ativar direct_messages
