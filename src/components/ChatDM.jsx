@@ -1125,19 +1125,22 @@ export default function ChatDM() {
                 Cancelar
               </button>
               <button
-                onClick={stopRecording}
+                onClick={sendAudio}
+                disabled={uploading}
                 style={{
                   padding: '6px 12px',
-                  background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+                  background: uploading 
+                    ? 'rgba(139, 92, 246, 0.5)' 
+                    : 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
                   border: 'none',
                   borderRadius: 8,
                   color: 'white',
                   fontSize: 13,
                   fontWeight: 600,
-                  cursor: 'pointer'
+                  cursor: uploading ? 'not-allowed' : 'pointer'
                 }}
               >
-                Enviar
+                {uploading ? 'Enviando...' : 'Enviar'}
               </button>
             </div>
           )}
