@@ -115,7 +115,7 @@ function WhatsAppLayout({ children }) {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/chat-realtime">
+      <BrowserRouter basename="/Kachat/">
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
