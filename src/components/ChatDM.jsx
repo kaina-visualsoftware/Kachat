@@ -358,13 +358,17 @@ export default function ChatDM() {
         // Audio preview with player
         if (fileType.startsWith('audio/')) {
           return (
-            <div style={{ marginTop: 8, maxWidth: 300 }}>
+            <div style={{ marginTop: 8, width: '100%', maxWidth: 450 }}>
               <audio 
                 controls 
                 style={{ 
                   width: '100%', 
                   borderRadius: 8,
-                  background: '#1a1a1a'
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                  padding: '4px 8px',
+                  height: 40,
+                  color: '#FAFAFA'
                 }}
               >
                 <source src={url} type={fileType} />
