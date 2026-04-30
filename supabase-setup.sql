@@ -1,0 +1,116 @@
+-- 1. Remover tabelas antigas (opcional, faça backup se necessário)
+DROP TABLE IF EXISTS public.messages CASCADE;
+
+-- 2. Tabela de perfis (vinculada ao Supabase Auth)
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  avatar_url TEXT,
+  bio TEXT,
+  updated_at TIMESTAMP DEFAULT NOW(),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de perfis
+DROP POLICY IF EXISTS "profiles_viewable" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
+
+CREATE POLICY "profiles_viewable" ON public.profiles 
+  FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "profiles_update_own" ON public.profiles 
+  FOR UPDATE TO authenticated 
+  USING (auth.uid() = id) 
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "profiles_insert_own" ON public.profiles 
+  FOR INSERT TO authenticated 
+  WITH CHECK (auth.uid() = id);
+
+-- 3. Trigger para criar perfil automaticamente no cadastro
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, username) 
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created 
+  AFTER INSERT ON auth.users 
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- 4. Tabela de Mensagens Diretas (DM)
+CREATE TABLE IF NOT EXISTS public.direct_messages (
+  id SERIAL PRIMARY KEY,
+  sender_id UUID REFERENCES auth.users(id) NOT NULL,
+  receiver_id UUID REFERENCES auth.users(id) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  read BOOLEAN DEFAULT FALSE
+);
+
+ALTER TABLE public.direct_messages ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de DMs: usuário só vê/envia suas próprias mensagens
+CREATE POLICY "dms_read_own" ON public.direct_messages 
+  FOR SELECT TO authenticated USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+CREATE POLICY "dms_send_own" ON public.direct_messages 
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = sender_id);
+
+-- 5. Configurar Realtime para DMs
+ALTER TABLE public.direct_messages REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.direct_messages;
+
+-- 6. Criar bucket no Storage para avatars
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('avatars', 'avatars', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas de Storage para avatars
+CREATE POLICY "Avatar images are publicly accessible" 
+  ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
+
+CREATE POLICY "Users can upload their own avatar" 
+  ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'avatars' AND 
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can update their own avatar" 
+  ON storage.objects FOR UPDATE USING (
+    auth.uid() = owner
+  );
+
+-- 7. Criar bucket dedicado para arquivos do chat
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('chat-files', 'chat-files', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Políticas de acesso para chat-files
+CREATE POLICY "Arquivos do chat são públicos" 
+  ON storage.objects FOR SELECT USING (bucket_id = 'chat-files');
+
+CREATE POLICY "Usuários podem fazer upload" 
+  ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'chat-files' AND 
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Usuários podem deletar próprios arquivos" 
+  ON storage.objects FOR DELETE USING (
+    auth.uid() = owner
+  );
+
+CREATE POLICY "Users can update their own chat files" 
+  ON storage.objects FOR UPDATE USING (
+    auth.uid() = owner
+  );
+
+-- 7. Ativar Realtime no Dashboard (após rodar este SQL):
+-- Realtime > Replication > Schema public > Ativar direct_messages
