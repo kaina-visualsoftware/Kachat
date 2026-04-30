@@ -22,7 +22,7 @@ export default function Login() {
       if (isSignUp) {
         const { error } = await signUp(email, password, username)
         if (error) throw error
-        setMessage('Cadastro realizado! Verifique seu email.')
+        setMessage('Cadastro realizado! Enviamos um link de confirmação para ' + email + '. Clique no link antes de fazer login.')
         setEmail('')
         setPassword('')
         setUsername('')
@@ -31,7 +31,14 @@ export default function Login() {
         if (error) throw error
       }
     } catch (err) {
-      setError(err.message)
+      // Check if error is about unconfirmed email
+      if (err.message && err.message.toLowerCase().includes('email') && err.message.toLowerCase().includes('confirm')) {
+        setError('Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada.')
+      } else if (err.message && err.message.includes('Invalid login credentials')) {
+        setError('Email ou senha incorretos. Tente novamente.')
+      } else {
+        setError(err.message)
+      }
     } finally {
       setLoading(false)
     }
