@@ -260,7 +260,24 @@ export default function ChatDM() {
   }
 
   const sendAudio = async () => {
-    if (!audioBlob) return
+    // If still recording, stop it first and wait for the blob to be created
+    if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+      await new Promise((resolve) => {
+        const originalOnStop = mediaRecorder.onstop
+        mediaRecorder.onstop = () => {
+          if (originalOnStop) originalOnStop()
+          resolve()
+        }
+        mediaRecorder.stop()
+        clearInterval(recordingTimerRef.current)
+        setIsRecording(false)
+      })
+    }
+    
+    if (!audioBlob) {
+      alert('Nenhum áudio gravado')
+      return
+    }
     
     setUploading(true)
     try {
