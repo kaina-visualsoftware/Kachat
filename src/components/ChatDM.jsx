@@ -26,6 +26,8 @@ export default function ChatDM() {
   const [previewImage, setPreviewImage] = useState(null)
   const [previewVideo, setPreviewVideo] = useState(null)
   const [previewPdf, setPreviewPdf] = useState(null)
+  const [previewDoc, setPreviewDoc] = useState(null)
+  const [previewHtml, setPreviewHtml] = useState(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
   useEffect(() => {
@@ -283,6 +285,64 @@ export default function ChatDM() {
                  <div style={{ fontWeight: 500 }}>{fileName}</div>
                  <div style={{ fontSize: 11, opacity: 0.7 }}>
                    {(fileSize / 1024).toFixed(1)} KB - Clique para visualizar
+                 </div>
+               </div>
+             </div>
+           </div>
+         )
+       }
+       
+       // TXT/MD preview
+       if (fileType === 'text/plain' || fileType === 'text/markdown' || fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+         return (
+           <div 
+             style={{ marginTop: 8, cursor: 'pointer' }}
+             onClick={() => setPreviewDoc({ url, fileName, fileType })}
+           >
+             <div style={{ 
+               display: 'flex', 
+               alignItems: 'center', 
+               gap: 8, 
+               padding: '12px 16px', 
+               background: 'rgba(139, 92, 246, 0.1)', 
+               border: '1px solid rgba(139, 92, 246, 0.3)', 
+               borderRadius: 12,
+               color: isMe ? '#BFDBFE' : '#818CF8'
+             }}>
+               <FileText size={16} />
+               <div>
+                 <div style={{ fontWeight: 500 }}>{fileName}</div>
+                 <div style={{ fontSize: 11, opacity: 0.7 }}>
+                   {(fileSize / 1024).toFixed(1)} KB - Clique para ler
+                 </div>
+               </div>
+             </div>
+           </div>
+         )
+       }
+       
+       // HTML preview
+       if (fileType === 'text/html' || fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+         return (
+           <div 
+             style={{ marginTop: 8, cursor: 'pointer' }}
+             onClick={() => setPreviewHtml(url)}
+           >
+             <div style={{ 
+               display: 'flex', 
+               alignItems: 'center', 
+               gap: 8, 
+               padding: '12px 16px', 
+               background: 'rgba(139, 92, 246, 0.1)', 
+               border: '1px solid rgba(139, 92, 246, 0.3)', 
+               borderRadius: 12,
+               color: isMe ? '#BFDBFE' : '#818CF8'
+             }}>
+               <FileText size={16} />
+               <div>
+                 <div style={{ fontWeight: 500 }}>{fileName}</div>
+                 <div style={{ fontSize: 11, opacity: 0.7 }}>
+                   {(fileSize / 1024).toFixed(1)} KB - Clique para visualizar HTML
                  </div>
                </div>
              </div>
@@ -1012,6 +1072,124 @@ export default function ChatDM() {
             onClick={(e) => {
               e.stopPropagation()
               setPreviewPdf(null)
+            }}
+            style={{
+              position: 'absolute',
+              top: 20,
+              right: 20,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              fontSize: 20,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* TXT/MD Preview Modal */}
+      {previewDoc && (
+        <div 
+          onClick={() => setPreviewDoc(null)}
+          style={{
+            position: 'fixed',
+            top:0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'pointer',
+            padding: 40
+          }}
+        >
+          <div style={{ 
+            width: '90vw', 
+            height: '90vh', 
+            background: '#1a1a1a', 
+            borderRadius: 12, 
+            overflow: 'auto', 
+            padding: 20, 
+            color: '#FAFAFA' 
+          }}>
+            <iframe 
+              src={previewDoc.url} 
+              title="Document Preview"
+              style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12 }}
+            />
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setPreviewDoc(null)
+            }}
+            style={{
+              position: 'absolute',
+              top: 20,
+              right: 20,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              fontSize: 20,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* HTML Preview Modal */}
+      {previewHtml && (
+        <div 
+          onClick={() => setPreviewHtml(null)}
+          style={{
+            position: 'fixed',
+            top:0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'pointer',
+            padding: 40
+          }}
+        >
+          <iframe
+            src={previewHtml}
+            title="HTML Preview"
+            sandbox="allow-scripts"
+            style={{
+              width: '90vw',
+              height: '90vh',
+              borderRadius: 12,
+              border: 'none'
+            }}
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setPreviewHtml(null)
             }}
             style={{
               position: 'absolute',
