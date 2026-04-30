@@ -25,6 +25,7 @@ export default function ChatDM() {
   // Image preview state
   const [previewImage, setPreviewImage] = useState(null)
   const [previewVideo, setPreviewVideo] = useState(null)
+  const [previewPdf, setPreviewPdf] = useState(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
   useEffect(() => {
@@ -259,36 +260,65 @@ export default function ChatDM() {
           </video>
         )
       }
-      
-      // Generic file download
-      return (
-        <a
-          href={url}
-          download={fileName}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '12px 16px',
-            background: 'rgba(139, 92, 246, 0.1)',
-            border: '1px solid rgba(139, 92, 246, 0.3)',
-            borderRadius: 12,
-            color: isMe ? '#BFDBFE' : '#818CF8',
-            textDecoration: 'none',
-            marginTop: 8
-          }}
-        >
-          <Download size={16} />
-          <div>
-            <div style={{ fontWeight: 500 }}>{fileName}</div>
-            <div style={{ fontSize: 11, opacity: 0.7 }}>
-              {(fileSize / 1024).toFixed(1)} KB
-            </div>
-          </div>
-        </a>
-      )
+       
+       // PDF preview
+       if (fileType === 'application/pdf') {
+         return (
+           <div 
+             style={{ marginTop: 8, cursor: 'pointer' }}
+             onClick={() => setPreviewPdf(url)}
+           >
+             <div style={{ 
+               display: 'flex', 
+               alignItems: 'center', 
+               gap: 8, 
+               padding: '12px 16px', 
+               background: 'rgba(139, 92, 246, 0.1)', 
+               border: '1px solid rgba(139, 92, 246, 0.3)', 
+               borderRadius: 12,
+               color: isMe ? '#BFDBFE' : '#818CF8'
+             }}>
+               <FileText size={16} />
+               <div>
+                 <div style={{ fontWeight: 500 }}>{fileName}</div>
+                 <div style={{ fontSize: 11, opacity: 0.7 }}>
+                   {(fileSize / 1024).toFixed(1)} KB - Clique para visualizar
+                 </div>
+               </div>
+             </div>
+           </div>
+         )
+       }
+       
+       // Generic file download
+       return (
+         <a
+           href={url}
+           download={fileName}
+           target="_blank"
+           rel="noopener noreferrer"
+           style={{
+             display: 'flex',
+             alignItems: 'center',
+             gap: 8,
+             padding: '12px 16px',
+             background: 'rgba(139, 92, 246, 0.1)',
+             border: '1px solid rgba(139, 92, 246, 0.3)',
+             borderRadius: 12,
+             color: isMe ? '#BFDBFE' : '#818CF8',
+             textDecoration: 'none',
+             marginTop: 8
+           }}
+         >
+           <Download size={16} />
+           <div>
+             <div style={{ fontWeight: 500 }}>{fileName}</div>
+             <div style={{ fontSize: 11, opacity: 0.7 }}>
+               {(fileSize / 1024).toFixed(1)} KB
+             </div>
+           </div>
+         </a>
+       )
     }
     
     // Otherwise render as text with links/YouTube
@@ -926,6 +956,62 @@ export default function ChatDM() {
             onClick={(e) => {
               e.stopPropagation()
               setPreviewVideo(null)
+            }}
+            style={{
+              position: 'absolute',
+              top: 20,
+              right: 20,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              fontSize: 20,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* PDF Preview Modal */}
+      {previewPdf && (
+        <div 
+          onClick={() => setPreviewPdf(null)}
+          style={{
+            position: 'fixed',
+            top:0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'pointer',
+            padding: 40
+          }}
+        >
+          <iframe
+            src={previewPdf}
+            title="PDF Preview"
+            style={{
+              width: '90vw',
+              height: '90vh',
+              borderRadius: 12,
+              border: 'none'
+            }}
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setPreviewPdf(null)
             }}
             style={{
               position: 'absolute',
