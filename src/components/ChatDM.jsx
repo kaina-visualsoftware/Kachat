@@ -258,13 +258,15 @@ export default function ChatDM() {
     return renderedParts.map((part) => {
       if (part.type === 'youtube') {
         return (
-          <div key={part.key} style={{ marginTop: 8, marginBottom: 4 }}>
-            <LiteYouTubeEmbed
-              id={part.videoId}
-              title="YouTube Video"
-              poster="maxresdefault"
-              style={{ borderRadius: 12, overflow: 'hidden' }}
-            />
+          <div key={part.key} style={{ marginTop: 8, marginBottom: 4, width: '100%', maxWidth: 400 }}>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 12 }}>
+              <LiteYouTubeEmbed
+                id={part.videoId}
+                title="YouTube Video"
+                poster="maxresdefault"
+                style={{ borderRadius: 12, overflow: 'hidden', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+              />
+            </div>
           </div>
         )
       } else if (part.type === 'link') {
