@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X } from 'lucide-react'
+import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X, Mic, Square } from 'lucide-react'
 import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage, detectCode } from '../utils/linkDetector.jsx'
 
 export default function ChatDM() {
@@ -29,6 +29,13 @@ export default function ChatDM() {
   const [previewDoc, setPreviewDoc] = useState(null)
   const [previewHtml, setPreviewHtml] = useState(null)
   const [isDragOver, setIsDragOver] = useState(false)
+  
+  // Audio recording states
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const [audioBlob, setAudioBlob] = useState(null)
+  const [mediaRecorder, setMediaRecorder] = useState(null)
+  const recordingTimerRef = useRef(null)
 
   useEffect(() => {
     if (!user || !receiverId) return
@@ -210,6 +217,91 @@ export default function ChatDM() {
     }))
     
     setPreviews(newPreviews)
+  }
+
+  // Audio recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      const chunks = []
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data)
+      }
+      
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' })
+        setAudioBlob(blob)
+        // Stop all tracks to release microphone
+        stream.getTracks().forEach(track => track.stop())
+      }
+      
+      recorder.start()
+      setMediaRecorder(recorder)
+      setIsRecording(true)
+      setRecordingTime(0)
+      
+      // Timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1)
+      }, 1000)
+    } catch (err) {
+      alert('Erro ao acessar microfone: ' + err.message)
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop()
+      clearInterval(recordingTimerRef.current)
+      setIsRecording(false)
+    }
+  }
+
+  const sendAudio = async () => {
+    if (!audioBlob) return
+    
+    setUploading(true)
+    try {
+      // Convert Blob to File object
+      const file = new File(
+        [audioBlob], 
+        `audio_${Date.now()}.webm`, 
+        { type: 'audio/webm' }
+      )
+      
+      const result = await uploadChatFiles([file], receiverId)
+      if (result.error) throw result.error
+      
+      // Send message
+      const fileData = result.data[0]
+      const messageContent = `[file]${fileData.url}|${fileData.fileName}|${fileData.fileType}|${fileData.fileSize}[/file]`
+      
+      await supabase.from('direct_messages').insert({
+        sender_id: user.id,
+        receiver_id: receiverId,
+        content: messageContent
+      })
+      
+      // Cleanup
+      setAudioBlob(null)
+      setRecordingTime(0)
+    } catch (error) {
+      alert('Erro ao enviar áudio: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const cancelRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.stop()
+    }
+    clearInterval(recordingTimerRef.current)
+    setIsRecording(false)
+    setAudioBlob(null)
+    setRecordingTime(0)
   }
 
   useEffect(() => {
@@ -913,6 +1005,34 @@ export default function ChatDM() {
             <Upload size={16} />
           </button>
 
+          {/* Audio Recording Button */}
+          <button
+            type="button"
+            onClick={isRecording ? stopRecording : startRecording}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 44,
+              height: 44,
+              background: isRecording 
+                ? 'rgba(239, 68, 68, 0.1)' 
+                : uploading ? 'rgba(63, 63, 70, 0.3)' 
+                  : 'rgba(139, 92, 246, 0.1)',
+              border: isRecording 
+                ? '1px solid rgba(239, 68, 68, 0.3)' 
+                : '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: 12,
+              color: isRecording ? '#EF4444' : uploading ? '#71717A' : '#A78BFA',
+              cursor: uploading ? 'not-allowed' : 'pointer',
+              transition: 'all 200ms ease',
+              flexShrink: 0
+            }}
+            title={isRecording ? 'Parar gravação' : 'Gravar áudio'}
+          >
+            {isRecording ? <Square size={16} /> : <Mic size={16} />}
+          </button>
+          
           <input
             value={input}
             onChange={e => setInput(e.target.value)}
@@ -970,11 +1090,67 @@ export default function ChatDM() {
           >
             <Send size={16} />
           </button>
+
+          {/* Audio Recording Status */}
+          {isRecording && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '8px 16px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              borderRadius: 12,
+              marginTop: 8
+            }}>
+              <div style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: '#EF4444',
+                animation: 'pulse 1.5s infinite'
+              }} />
+              <span style={{ color: '#EF4444', fontSize: 13, flex: 1 }}>
+                Gravando... {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+              </span>
+              <button
+                onClick={cancelRecording}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EF4444',
+                  cursor: 'pointer',
+                  fontSize: 13
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={stopRecording}
+                style={{
+                  padding: '6px 12px',
+                  background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+                  border: 'none',
+                  borderRadius: 8,
+                  color: 'white',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Enviar
+              </button>
+            </div>
+          )}
         </form>
       </div>
 
       {/* Animation Keyframes */}
       <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        
         @keyframes fadeInUp {
           from {
             opacity: 0;
