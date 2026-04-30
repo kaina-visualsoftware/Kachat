@@ -35,7 +35,10 @@ export function AuthProvider({ children }) {
     return supabase.auth.signUp({
       email,
       password,
-      options: { data: { username } },
+      options: { 
+        data: { username },
+        emailRedirectTo: 'https://kaina-visualsoftware.github.io/Kachat/'
+      },
     });
   };
   const signIn = (email, password) => {
