@@ -23,6 +23,9 @@ export default function ChatDM() {
   const [previews, setPreviews] = useState([])
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef(null)
+  
+  // Image preview state
+  const [previewImage, setPreviewImage] = useState(null)
 
   useEffect(() => {
     if (!user || !receiverId) return
@@ -196,7 +199,7 @@ export default function ChatDM() {
                 borderRadius: 12,
                 cursor: 'pointer'
               }}
-              onClick={() => window.open(url, '_blank')}
+              onClick={() => setPreviewImage(url)}
             />
             <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4, color: isMe ? '#BFDBFE' : '#818CF8' }}>
               {fileName} ({(fileSize / 1024).toFixed(1)} KB)
@@ -737,6 +740,61 @@ export default function ChatDM() {
           background: rgba(63, 63, 70, 0.8);
         }
       `}</style>
+
+      {/* Image Preview Modal */}
+      {previewImage && (
+        <div 
+          onClick={() => setPreviewImage(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'pointer'
+          }}
+        >
+          <img 
+            src={previewImage} 
+            alt="Preview"
+            style={{ 
+              maxWidth: '90vw', 
+              maxHeight: '90vh',
+              borderRadius: 12,
+              objectFit: 'contain'
+            }}
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setPreviewImage(null)
+            }}
+            style={{
+              position: 'absolute',
+              top: 20,
+              right: 20,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              fontSize: 20,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   )
 }
