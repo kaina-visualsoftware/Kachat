@@ -346,16 +346,37 @@ export default function ChatDM() {
         )
       }
       
-      // Video
-      if (fileType.startsWith('video/')) {
-        return (
-          <video controls style={{ maxWidth: 300, borderRadius: 12, marginTop: 8 }}>
-            <source src={url} type={fileType} />
-          </video>
-        )
-      }
-       
-       // PDF preview
+        // Video
+        if (fileType.startsWith('video/')) {
+          return (
+            <video controls style={{ maxWidth: 300, borderRadius: 12, marginTop: 8 }}>
+              <source src={url} type={fileType} />
+            </video>
+          )
+        }
+        
+        // Audio preview with player
+        if (fileType.startsWith('audio/')) {
+          return (
+            <div style={{ marginTop: 8, maxWidth: 300 }}>
+              <audio 
+                controls 
+                style={{ 
+                  width: '100%', 
+                  borderRadius: 8,
+                  background: '#1a1a1a'
+                }}
+              >
+                <source src={url} type={fileType} />
+              </audio>
+              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4, color: isMe ? '#BFDBFE' : '#818CF8' }}>
+                {fileName} ({(fileSize / 1024).toFixed(1)} KB
+              </div>
+            </div>
+          )
+        }
+        
+        // PDF preview
        if (fileType === 'application/pdf') {
          return (
            <div 
