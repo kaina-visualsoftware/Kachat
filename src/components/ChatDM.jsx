@@ -258,7 +258,7 @@ export default function ChatDM() {
     return renderedParts.map((part) => {
       if (part.type === 'youtube') {
         return (
-          <div key={part.key} style={{ marginTop: 8, marginBottom: 4, width: '100%', maxWidth: 400 }}>
+          <div key={part.key} style={{ marginTop: 8, marginBottom: 4, width: '100%' }}>
             <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 12 }}>
               <LiteYouTubeEmbed
                 id={part.videoId}
@@ -444,7 +444,7 @@ export default function ChatDM() {
 
                 {/* Message Bubble */}
                 <div style={{
-                  maxWidth: '65%',
+                  maxWidth: '90%',
                   padding: '10px 14px',
                   background: isMe 
                     ? 'rgba(139, 92, 246, 0.2)' 
