@@ -3,7 +3,7 @@ import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X } from 'lucide-react'
-import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage } from '../utils/linkDetector.jsx'
+import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage, detectCode } from '../utils/linkDetector.jsx'
 
 export default function ChatDM() {
   const { receiverId } = useParams()
@@ -378,10 +378,98 @@ export default function ChatDM() {
              </div>
            </div>
          </a>
-       )
-    }
-    
-    // Otherwise render as text with links/YouTube
+        )
+      }
+      
+      // Code preview
+      const codeLang = detectCode(content)
+      if (codeLang && !fileData) {
+        const langLabels = {
+          sql: 'SQL',
+          javascript: 'JavaScript',
+          python: 'Python',
+          html: 'HTML',
+          css: 'CSS',
+          json: 'JSON',
+          bash: 'Bash',
+          java: 'Java',
+          cpp: 'C++',
+          php: 'PHP',
+          ruby: 'Ruby',
+          go: 'Go',
+          rust: 'Rust',
+          code: 'Código'
+        }
+        
+        const label = langLabels[codeLang] || 'Código'
+        
+        return (
+          <div style={{ marginTop: 8, width: '100%' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '8px 12px',
+              background: 'rgba(139, 92, 246, 0.2)',
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderBottom: 'none'
+            }}>
+              <div style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: isMe ? '#BFDBFE' : '#A78BFA',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                {label}
+              </div>
+              <button
+                onClick={() => navigator.clipboard.writeText(content)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: isMe ? '#BFDBFE' : '#A78BFA',
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  transition: 'all 200ms ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'rgba(139, 92, 246, 0.2)'
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'none'
+                }}
+              >
+                Copiar
+              </button>
+            </div>
+            <pre style={{
+              margin: 0,
+              padding: '12px 16px',
+              background: 'rgba(0, 0, 0, 0.6)',
+              borderBottomLeftRadius: 8,
+              borderBottomRightRadius: 8,
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderTop: 'none',
+              overflowX: 'auto',
+              fontSize: 12,
+              lineHeight: 1.6,
+              color: '#E2E8F0',
+              fontFamily: "'Fira Code', 'Monaco', 'Courier New', monospace",
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-all'
+            }}>
+              <code>{content}</code>
+            </pre>
+          </div>
+        )
+      }
+      
+      // Otherwise render as text with links/YouTube
     const renderedParts = renderTextWithLinks(content, isMe)
     
     if (!Array.isArray(renderedParts)) {

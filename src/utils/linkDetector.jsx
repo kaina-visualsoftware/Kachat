@@ -49,13 +49,13 @@ export function renderTextWithLinks(text, isMe) {
 }
 
 export function parseFileMessage(content) {
-  const fileRegex = /\[file\](.*?)\|(.*?)\|(.*?)\|(\d+)\[\/file\]/
+  const fileRegex = /\[file\](.*?)\|(.*?)\|(.*?)\|(\d+)\[\/file\]/;
   const match = content.match(fileRegex);
   
   if (!match) return null;
   
   const [_, url, fileName, fileType, fileSize] = match;
-  
+    
   return {
     type: 'file',
     url,
@@ -63,4 +63,53 @@ export function parseFileMessage(content) {
     fileType,
     fileSize: parseInt(fileSize)
   }
+}
+
+export function detectCode(text) {
+  if (!text) return null;
+  
+  // Verifica se tem múltiplas linhas
+  const lines = text.split('\n');
+  if (lines.length < 2) return null;
+  
+  // Padrões de linguagens
+  const patterns = {
+    sql: /\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|CREATE|ALTER|DROP|TABLE)\b/i,
+    javascript: /\b(function|const|let|var|=>|import|export|require|console\.)\b/,
+    python: /\b(def|class|import|from|print|return|if __name__|lambda)\b/,
+    html: /<\w+>.*<\/\w+>|<\w+\s*\/?>|<\w+\s+[^>]*>/,
+    css: /\{([^}]*)\}|@media|@import|@keyframes/,
+    json: /^\s*[\{\[]/,
+    bash: /\b(echo|sudo|apt|npm|git|cd|ls|mkdir|rm|cp|mv)\b/,
+    java: /\b(public|private|class|static|void|int|String|System\.out)\b/,
+    cpp: /\b(#include|cout|cin|std::|vector|template|class)\b/,
+    php: /\b(<\?php|\$\w+|echo|function|array\(\))\b/i,
+    ruby: /\b(def|end|puts|require|class|attr_accessor)\b/,
+    go: /\b(func|package|import|type|struct|fmt\.)\b/,
+    rust: /\b(fn|let|mut|println!|use |struct|impl)\b/,
+  };
+    
+  const scores = {};
+  for (const [lang, regex] of Object.entries(patterns)) {
+    const matches = text.match(regex) || [];
+    if (matches.length > 0) {
+      scores[lang] = matches.length;
+    }
+  }
+    
+  // Se encontrou alguma linguagem
+  if (Object.keys(scores).length > 0) {
+    const detectedLang = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+    return detectedLang;
+  }
+    
+  // Verifica se parece código (indentação, símbolos)
+  const codeIndicators = text.match(/[{}();=<>]/g) || [];
+  const hasCodeStructure = codeIndicators.length > text.length * 0.05; // >5% de símbolos
+    
+  if (hasCodeStructure && lines.length >= 3) {
+    return 'code'; // Genérico
+  }
+    
+  return null;
 }
