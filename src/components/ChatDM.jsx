@@ -24,6 +24,7 @@ export default function ChatDM() {
   
   // Image preview state
   const [previewImage, setPreviewImage] = useState(null)
+  const [previewVideo, setPreviewVideo] = useState(null)
 
   useEffect(() => {
     if (!user || !receiverId) return
@@ -256,44 +257,39 @@ export default function ChatDM() {
     return renderedParts.map((part) => {
       if (part.type === 'youtube') {
         return (
-          <div key={part.key} style={{ marginTop: 8, marginBottom: 4, width: '100%' }}>
-            <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 12, background: '#000' }}>
+          <div key={part.key} style={{ marginTop: 8, marginBottom: 4, width: '100%', maxWidth: 560, cursor: 'pointer' }}
+               onClick={() => setPreviewVideo(part.videoId)}>
+            <div style={{ 
+              position: 'relative', 
+              width: '100%', 
+              paddingBottom: '56.25%', 
+              height: 0, 
+              overflow: 'hidden', 
+              borderRadius: 16, 
+              background: '#000',
+              boxShadow: '0 8px 32px rgba(139, 92, 246, 0.3)'
+            }}>
               <iframe
-                src={`https://www.youtube.com/embed/${part.videoId}?autoplay=0&rel=0`}
+                src={`https://www.youtube.com/embed/${part.videoId}?autoplay=0&rel=0&modestbranding=1&showinfo=0`}
                 title="YouTube Video"
                 style={{
                   position: 'absolute',
-                  top: 0,
+                  top:0,
                   left: 0,
                   width: '100%',
                   height: '100%',
-                  borderRadius: 12,
+                  borderRadius: 16,
                   border: 'none'
                 }}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
             </div>
+            <div style={{ fontSize: 11, color: isMe ? '#BFDBFE' : '#818CF8', marginTop: 4, opacity: 0.7 }}>
+              🎬 Clique para ampliar
+            </div>
           </div>
         )
-      } else if (part.type === 'link') {
-        return (
-          <a
-            key={part.key}
-            href={part.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              color: isMe ? '#BFDBFE' : '#818CF8',
-              textDecoration: 'underline',
-              wordBreak: 'break-all'
-            }}
-          >
-            {part.url}
-          </a>
-        )
-      } else {
-        return <span key={part.key} style={{ color: '#FAFAFA' }}>{part.content}</span>
       }
     })
   }
@@ -782,6 +778,76 @@ export default function ChatDM() {
             onClick={(e) => {
               e.stopPropagation()
               setPreviewImage(null)
+            }}
+            style={{
+              position: 'absolute',
+              top: 20,
+              right: 20,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              fontSize: 20,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* YouTube Video Modal */}
+      {previewVideo && (
+        <div 
+          onClick={() => setPreviewVideo(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'pointer',
+            padding: 20
+          }}
+        >
+          <div style={{ 
+            position: 'relative', 
+            width: '100%', 
+            maxWidth: 900, 
+            paddingBottom: '56.25%', 
+            height: 0, 
+            borderRadius: 16 
+          }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${previewVideo}?autoplay=1&rel=0`}
+              title="YouTube Video"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                borderRadius: 16,
+                border: 'none'
+              }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setPreviewVideo(null)
             }}
             style={{
               position: 'absolute',
