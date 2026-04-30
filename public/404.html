@@ -5,11 +5,11 @@
     <title>Redirecionando...</title>
     <script>
       // Redireciona para index.html preservando o caminho da rota
-      const segmentCount = 1; // Como o base path é /chat-realtime/, o primeiro segmento é o nome do repo
+      const segmentCount = 1; // Como o base path é /Kachat/, o primeiro segmento é o nome do repo
       const l = window.location;
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        '/chat-realtime/' + l.pathname.slice(l.pathname.indexOf('/', 1) + 1) +
+        '/Kachat/' + l.pathname.slice(l.pathname.indexOf('/', 1) + 1) +
         l.search + l.hash
       );
     </script>
