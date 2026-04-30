@@ -21,7 +21,10 @@ export default function UserList() {
       .select('id, username')
       .neq('id', user.id)
     
-    if (!error && data) setUsers(data)
+    // Filter out users without username (deleted users)
+    const validUsers = data ? data.filter(u => u.username) : []
+    
+    if (!error && validUsers) setUsers(validUsers)
     setLoading(false)
   }
 
