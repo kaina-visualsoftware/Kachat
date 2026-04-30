@@ -25,6 +25,7 @@ export default function ChatDM() {
   // Image preview state
   const [previewImage, setPreviewImage] = useState(null)
   const [previewVideo, setPreviewVideo] = useState(null)
+  const [isDragOver, setIsDragOver] = useState(false)
 
   useEffect(() => {
     if (!user || !receiverId) return
@@ -165,6 +166,49 @@ export default function ChatDM() {
     }
   }
 
+  // Drag and Drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length === 0) return
+    
+    // Validate file sizes (max 100MB each)
+    const maxSize = 100 * 1024 * 1024
+    const invalid = files.filter(f => f.size > maxSize)
+    if (invalid.length > 0) {
+      alert(`Arquivos muito grandes (máx 100MB): ${invalid.map(f => f.name).join(', ')}`)
+      return
+    }
+    
+    setSelectedFiles(files)
+    
+    // Create preview URLs for images
+    const newPreviews = files.map(file => ({
+      file,
+      url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    }))
+    
+    setPreviews(newPreviews)
+  }
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -295,15 +339,49 @@ export default function ChatDM() {
   }
 
   return (
-    <div style={{
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      background: '#09090B',
-      margin: 0,
-      padding: 0,
-      overflow: 'hidden'
-    }}>
+    <div 
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#09090B',
+        margin:0,
+        padding: 0,
+        overflow: 'hidden',
+        position: 'relative'
+      }}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag Overlay */}
+      {isDragOver && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(139, 92, 246, 0.2)',
+          border: '3px dashed #8B5CF6',
+          borderRadius: 12,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            color: '#A78BFA',
+            fontSize: 18,
+            fontWeight: 600
+          }}>
+            📎 Solte para enviar arquivo(s)
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{
         display: 'flex',
