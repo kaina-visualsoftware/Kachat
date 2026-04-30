@@ -9,7 +9,7 @@ import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
 export default function ChatDM() {
   const { receiverId } = useParams()
-  const { user } = useAuth()
+  const { user, uploadChatFiles } = useAuth()
   const navigate = useNavigate()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
