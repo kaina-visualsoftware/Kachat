@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://visua.github.io/chat-realtime",
+  "homepage": "https://kaina-visualsoftware.github.io/Kachat",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
