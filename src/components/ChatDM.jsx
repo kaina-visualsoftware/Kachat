@@ -768,9 +768,9 @@ export default function ChatDM() {
             src={previewImage} 
             alt="Preview"
             style={{ 
-              maxWidth: '90vw', 
-              maxHeight: '90vh',
-              borderRadius: 12,
+              maxWidth: '95vw', 
+              maxHeight: '95vh',
+              borderRadius: 8,
               objectFit: 'contain'
             }}
           />
@@ -811,22 +811,22 @@ export default function ChatDM() {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0, 0, 0, 0.95)',
+            background: 'rgba(0, 0, 0, 0.98)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 9999,
             cursor: 'pointer',
-            padding: 20
+            padding: 40
           }}
         >
           <div style={{ 
             position: 'relative', 
             width: '100%', 
-            maxWidth: 900, 
+            maxWidth: '90vw', 
             paddingBottom: '56.25%', 
             height: 0, 
-            borderRadius: 16 
+            borderRadius: 12 
           }}>
             <iframe
               src={`https://www.youtube.com/embed/${previewVideo}?autoplay=1&rel=0`}
