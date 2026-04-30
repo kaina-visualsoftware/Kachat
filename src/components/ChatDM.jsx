@@ -4,8 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X } from 'lucide-react'
 import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage } from '../utils/linkDetector.jsx'
-import LiteYouTubeEmbed from 'react-lite-youtube-embed'
-import 'react-lite-youtube-embed/dist/LiteYouTubeEmbed.css'
 
 export default function ChatDM() {
   const { receiverId } = useParams()
@@ -259,12 +257,21 @@ export default function ChatDM() {
       if (part.type === 'youtube') {
         return (
           <div key={part.key} style={{ marginTop: 8, marginBottom: 4, width: '100%' }}>
-            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 12 }}>
-              <LiteYouTubeEmbed
-                id={part.videoId}
+            <div style={{ position: 'relative', width: '100%', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: 12, background: '#000' }}>
+              <iframe
+                src={`https://www.youtube.com/embed/${part.videoId}?autoplay=0&rel=0`}
                 title="YouTube Video"
-                poster="maxresdefault"
-                style={{ borderRadius: 12, overflow: 'hidden', position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 12,
+                  border: 'none'
+                }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
               />
             </div>
           </div>
