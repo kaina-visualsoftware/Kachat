@@ -322,35 +322,27 @@ export default function UserList() {
             justifyContent: 'center',
             width: 32,
             height: 32,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
-            border: 'none',
-            overflow: 'hidden',
+            background: 'rgba(63, 63, 70, 0.3)',
+            border: '1px solid rgba(63, 63, 70, 0.5)',
+            borderRadius: 8,
+            color: '#A1A1AA',
             cursor: 'pointer',
             transition: 'all 200ms ease',
             flexShrink: 0
           }}
           onMouseEnter={(e) => {
-            e.target.style.transform = 'scale(1.1)'
-            e.target.style.boxShadow = '0 0 12px rgba(139, 92, 246, 0.5)'
+            e.target.style.background = 'rgba(139, 92, 246, 0.15)'
+            e.target.style.color = '#A78BFA'
+            e.target.style.borderColor = 'rgba(139, 92, 246, 0.3)'
           }}
           onMouseLeave={(e) => {
-            e.target.style.transform = 'scale(1)'
-            e.target.style.boxShadow = 'none'
+            e.target.style.background = 'rgba(63, 63, 70, 0.3)'
+            e.target.style.color = '#A1A1AA'
+            e.target.style.borderColor = 'rgba(63, 63, 70, 0.5)'
           }}
           title="Meu Perfil"
         >
-          {profile?.avatar_url ? (
-            <img 
-              src={profile.avatar_url} 
-              alt="perfil"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          ) : (
-            <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>
-              {getInitials(profile?.username || 'U')}
-            </span>
-          )}
+          <UserCog size={14} />
         </button>
       </div>
     </div>
