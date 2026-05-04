@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X, Mic, Square, FileSpreadsheet, FileJson, Image as ImageIcon } from 'lucide-react'
 import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage, detectCode } from '../utils/linkDetector.jsx'
+import { getCommands, processCommand } from '../utils/commands'
 
 function CsvPreviewModal({ data, onClose }) {
   const [csvData, setCsvData] = useState(null)
@@ -209,6 +210,10 @@ export default function ChatDM() {
   const [previewHtml, setPreviewHtml] = useState(null)
   const [previewCsv, setPreviewCsv] = useState(null)
   const [previewSvg, setPreviewSvg] = useState(null)
+  const [showCommandList, setShowCommandList] = useState(false)
+  const [filteredCommands, setFilteredCommands] = useState([])
+  const [commandIndex, setCommandIndex] = useState(-1)
+  const inputRef = useRef(null)
   const [isDragOver, setIsDragOver] = useState(false)
   
   // Audio recording states
@@ -286,7 +291,33 @@ export default function ChatDM() {
   const sendMessage = async (e) => {
     e.preventDefault()
     if (!input.trim()) return
-
+    
+    // Check if it's a command
+    if (input.startsWith('/')) {
+      const result = processCommand(input)
+      
+      if (result) {
+        if (result.type === 'action') {
+          // Handle special actions
+          if (result.message === '__CLEAR__') {
+            setMessages([])
+          }
+        } else if (result.type === 'system' || result.type === 'message') {
+          // Send command output as a message
+          const { error } = await supabase.from('direct_messages').insert({
+            sender_id: user.id,
+            receiver_id: receiverId,
+            content: result.message
+          })
+        }
+      }
+      
+      setInput('')
+      setShowCommandList(false)
+      inputRef.current?.focus()
+      return
+    }
+    
     const { error } = await supabase.from('direct_messages').insert({
       sender_id: user.id,
       receiver_id: receiverId,
@@ -553,6 +584,37 @@ export default function ChatDM() {
   }
 
   const renderMessageContent = (content, isMe) => {
+    // Check if it's a system message (starts with emoji indicators)
+    if (content.startsWith('📋') || content.startsWith('🕐') || content.startsWith('📅') || 
+        content.startsWith('🏓') || content.startsWith('🎲') || content.startsWith('🪙') || 
+        content.startsWith('🔀') || content.startsWith('¯') || content.startsWith('(╯') || 
+        content.startsWith('┬─') || content.startsWith('( ͡') || content.startsWith('📱') || 
+        content.startsWith('⏱️') || content.startsWith('__CLEAR__')) {
+      
+      // Handle clear action
+      if (content === '__CLEAR__') {
+        return null
+      }
+      
+      // System/command message - render with different style
+      const isSystem = content.startsWith('📋') || content.startsWith('🕐') || 
+                        content.startsWith('📅') || content.startsWith('🏓') || 
+                        content.startsWith('⏱️') || content.startsWith('📱')
+      
+      return (
+        <div style={{
+          fontSize: 12,
+          color: isSystem ? '#71717A' : '#FAFAFA',
+          fontStyle: isSystem ? 'italic' : 'normal',
+          padding: '4px 8px',
+          textAlign: 'center',
+          opacity: 0.8
+        }}>
+          {content}
+        </div>
+      )
+    }
+    
     // First check if it's a file message
     const fileData = parseFileMessage(content)
     if (fileData) {
@@ -1423,7 +1485,7 @@ export default function ChatDM() {
           </div>
         )}
 
-        <form onSubmit={sendMessage} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <form onSubmit={sendMessage} style={{ display: 'flex', gap: 10, alignItems: 'center', position: 'relative' }}>
           <input
             ref={fileInputRef}
             type="file"
@@ -1493,9 +1555,43 @@ export default function ChatDM() {
           </button>
           
           <input
+            ref={inputRef}
             value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Digite sua mensagem..."
+            onChange={e => {
+              const value = e.target.value
+              setInput(value)
+              
+              // Detect command
+              if (value.startsWith('/')) {
+                const query = value.slice(1).toLowerCase()
+                const matches = getCommands().filter(c => c.name.startsWith(query))
+                setFilteredCommands(matches)
+                setShowCommandList(matches.length > 0 && query.length > 0)
+                setCommandIndex(-1)
+              } else {
+                setShowCommandList(false)
+              }
+            }}
+            onKeyDown={e => {
+              if (showCommandList && filteredCommands.length > 0) {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  setCommandIndex(prev => (prev + 1) % filteredCommands.length)
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  setCommandIndex(prev => prev <= 0 ? filteredCommands.length - 1 : prev - 1)
+                } else if (e.key === 'Tab' || e.key === 'Enter') {
+                  if (commandIndex >= 0) {
+                    e.preventDefault()
+                    setInput('/' + filteredCommands[commandIndex].name + ' ')
+                    setShowCommandList(false)
+                  }
+                } else if (e.key === 'Escape') {
+                  setShowCommandList(false)
+                }
+              }
+            }}
+            placeholder="Digite sua mensagem ou / para comandos..."
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -1514,6 +1610,8 @@ export default function ChatDM() {
             onBlur={(e) => {
               e.target.style.border = '1px solid rgba(63, 63, 70, 0.5)'
               e.target.style.background = 'rgba(39, 39, 42, 0.8)'
+              // Delay hiding command list to allow click
+              setTimeout(() => setShowCommandList(false), 200)
             }}
           />
           <button
@@ -1601,6 +1699,65 @@ export default function ChatDM() {
               >
                 {uploading ? 'Enviando...' : 'Enviar'}
               </button>
+            </div>
+          )}
+
+          {/* Command Autocomplete List */}
+          {showCommandList && filteredCommands.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: 0,
+              right: 0,
+              marginBottom: 8,
+              background: 'rgba(39, 39, 42, 0.98)',
+              border: '1px solid rgba(63, 63, 70, 0.5)',
+              borderRadius: 12,
+              maxHeight: 200,
+              overflowY: 'auto',
+              zIndex: 100
+            }}>
+              {filteredCommands.map((cmd, idx) => (
+                <div
+                  key={cmd.name}
+                  onClick={() => {
+                    setInput('/' + cmd.name + ' ')
+                    setShowCommandList(false)
+                    inputRef.current?.focus()
+                  }}
+                  style={{
+                    padding: '10px 16px',
+                    cursor: 'pointer',
+                    background: idx === commandIndex ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+                    borderBottom: idx < filteredCommands.length - 1 ? '1px solid rgba(63, 63, 70, 0.3)' : 'none',
+                    transition: 'background 100ms ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'
+                    setCommandIndex(idx)
+                  }}
+                  onMouseLeave={(e) => {
+                    if (idx !== commandIndex) {
+                      e.currentTarget.style.background = 'transparent'
+                    }
+                  }}
+                >
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: '#FAFAFA',
+                    marginBottom: 2
+                  }}>
+                    /{cmd.name}
+                  </div>
+                  <div style={{
+                    fontSize: 11,
+                    color: '#71717A'
+                  }}>
+                    {cmd.description}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </form>
