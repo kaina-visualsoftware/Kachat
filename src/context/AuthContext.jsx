@@ -10,9 +10,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Verificar sessão atual
     supabase.auth.getSession().then(({ data: { session } }) => {
-      // If session exists but email not confirmed, sign out
       if (session?.user && !session.user.email_confirmed_at) {
-        supabase.auth.signOut();
         setUser(null);
       } else {
         setUser(session?.user ?? null);

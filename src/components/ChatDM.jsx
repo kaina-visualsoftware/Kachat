@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X, Mic, Square } from 'lucide-react'
 import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage, detectCode } from '../utils/linkDetector.jsx'
 
 export default function ChatDM() {
   const { receiverId } = useParams()
-  const { user, profile, uploadChatFiles } = useAuth()
+  const { user, profile, uploadChatFiles, loading } = useAuth()
   const navigate = useNavigate()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -40,7 +40,7 @@ export default function ChatDM() {
   const recordingTimerRef = useRef(null)
 
   useEffect(() => {
-    if (!user || !receiverId) return
+    if (!user || !receiverId || loading) return
 
     loadMessages()
     loadReceiverName()
@@ -69,7 +69,7 @@ export default function ChatDM() {
       })
 
     return () => supabase.removeChannel(channel)
-  }, [user, receiverId])
+  }, [user, receiverId, loading])
 
   const loadMessages = async () => {
     const { data, error } = await supabase
@@ -687,6 +687,10 @@ export default function ChatDM() {
     })
   }
 
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
+  if (!receiverId) return <Navigate to="/" replace />
+
   return (
     <div 
       style={{
@@ -847,7 +851,11 @@ export default function ChatDM() {
         ) : (
           messages.map((m, index) => {
             const isMe = m.sender_id === user.id
-            return (
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
+  if (!receiverId) return <Navigate to="/" replace />
+
+  return (
               <div
                 key={m.id}
                 style={{
