@@ -126,10 +126,16 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
         {/* Tabs */}
         <div style={{
           display: 'flex',
-          borderBottom: '1px solid rgba(63, 63, 70, 0.5)'
+          borderBottom: '1px solid rgba(63, 63, 70, 0.5)',
+          position: 'relative',
+          zIndex: 10
         }}>
           <button
-            onClick={() => setActiveTab('conversations')}
+            type="button"
+            onClick={() => {
+              console.log('Clicked conversations tab')
+              setActiveTab('conversations')
+            }}
             style={{
               flex: 1,
               padding: '14px 16px',
@@ -146,7 +152,11 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
             Conversas
           </button>
           <button
-            onClick={() => setActiveTab('groups')}
+            type="button"
+            onClick={() => {
+              console.log('Clicked groups tab')
+              setActiveTab('groups')
+            }}
             style={{
               flex: 1,
               padding: '14px 16px',
