@@ -1573,6 +1573,12 @@ export default function ChatDM() {
               }
             }}
             onKeyDown={e => {
+              // Shift + Enter = new line (default behavior)
+              if (e.key === 'Enter' && e.shiftKey) {
+                // Allow default behavior (new line)
+                return
+              }
+              
               if (showCommandList && filteredCommands.length > 0) {
                 if (e.key === 'ArrowDown') {
                   e.preventDefault()
@@ -1580,7 +1586,7 @@ export default function ChatDM() {
                 } else if (e.key === 'ArrowUp') {
                   e.preventDefault()
                   setCommandIndex(prev => prev <= 0 ? filteredCommands.length - 1 : prev - 1)
-                } else if (e.key === 'Tab' || e.key === 'Enter') {
+                } else if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
                   if (commandIndex >= 0) {
                     e.preventDefault()
                     setInput('/' + filteredCommands[commandIndex].name + ' ')

@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './components/Login'
 import UserList from './components/UserList'
 import ChatDM from './components/ChatDM'
+import GroupList from './components/GroupList'
+import ChatGroup from './components/ChatGroup'
 import EmptyState from './components/EmptyState'
 import Profile from './components/Profile'
 
@@ -54,6 +56,20 @@ function AppRoutes() {
           </WhatsAppLayout>
         </ProtectedRoute>
       } />
+      <Route path="/groups" element={
+        <ProtectedRoute>
+          <WhatsAppLayout>
+            <GroupList />
+          </WhatsAppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/group/:groupId" element={
+        <ProtectedRoute>
+          <WhatsAppLayout>
+            <ChatGroup />
+          </WhatsAppLayout>
+        </ProtectedRoute>
+      } />
       <Route path="/chat/:receiverId" element={
         <ProtectedRoute>
           <WhatsAppLayout>
@@ -74,6 +90,10 @@ function AppRoutes() {
 }
 
 function WhatsAppLayout({ children }) {
+  // Determine if we're showing groups or users
+  const location = window.location.hash.slice(1) // Remove # from hash
+  const showGroups = location.startsWith('/group') || location.startsWith('/groups')
+  
   return (
     <div style={{
       display: 'flex',
@@ -84,7 +104,7 @@ function WhatsAppLayout({ children }) {
       margin: 0,
       padding: 0
     }}>
-      {/* Sidebar - UserList */}
+      {/* Sidebar */}
       <div style={{
         width: 380,
         minWidth: 380,
@@ -95,7 +115,7 @@ function WhatsAppLayout({ children }) {
         flexDirection: 'column',
         overflow: 'hidden'
       }}>
-        <UserList />
+        {showGroups ? <GroupList /> : <UserList />}
       </div>
 
       {/* Main Chat Area */}

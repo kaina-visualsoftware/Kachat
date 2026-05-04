@@ -166,6 +166,192 @@ export function AuthProvider({ children }) {
       return { data: null, error };
     }
   }; // ← Esta chave fecha a função uploadChatFiles
+
+  // Group functions
+  const createGroup = async (name, description, memberIds = []) => {
+    if (!user) return { error: new Error("No user") };
+    
+    // Create group
+    const { data: group, error: groupError } = await supabase
+      .from("groups")
+      .insert({ 
+        name, 
+        description, 
+        created_by: user.id 
+      })
+      .select()
+      .single();
+    
+    if (groupError) return { data: null, error: groupError };
+    
+    // Add members (excluding duplicates and current user)
+    const uniqueMembers = [...new Set([...memberIds, user.id])];
+    const memberInserts = uniqueMembers.map(userId => ({
+      group_id: group.id,
+      user_id: userId,
+      role: userId === user.id ? 'admin' : 'member'
+    }));
+    
+    const { error: membersError } = await supabase
+      .from("group_members")
+      .insert(memberInserts);
+    
+    if (membersError) return { data: null, error: membersError };
+    
+    return { data: group, error: null };
+  };
+
+  const getGroups = async () => {
+    if (!user) return { data: [], error: new Error("No user") };
+    
+    const { data, error } = await supabase
+      .from("group_members")
+      .select(`
+        group_id,
+        role,
+        groups:group_id (
+          id, name, description, avatar_url, created_by, created_at
+        )
+      `)
+      .eq("user_id", user.id);
+    
+    if (error) return { data: [], error };
+    
+    // Get member counts for each group
+    const groupsWithCounts = await Promise.all(
+      data.map(async (gm) => {
+        const { count } = await supabase
+          .from("group_members")
+          .select("*", { count: 'exact', head: true })
+          .eq("group_id", gm.group_id);
+        
+        return {
+          ...gm.groups,
+          member_count: count || 0,
+          role: gm.role
+        };
+      })
+    );
+    
+    return { data: groupsWithCounts, error: null };
+  };
+
+  const getGroupMembers = async (groupId) => {
+    const { data, error } = await supabase
+      .from("group_members")
+      .select(`
+        role,
+        profiles:user_id (
+          id, username, avatar_url
+        )
+      `)
+      .eq("group_id", groupId);
+    
+    return { data: data?.map(gm => ({
+      ...gm.profiles,
+      role: gm.role
+    })) || [], error };
+  };
+
+  const addGroupMember = async (groupId, userId) => {
+    if (!user) return { error: new Error("No user") };
+    
+    // Check if current user is admin
+    const { data: memberCheck } = await supabase
+      .from("group_members")
+      .select("role")
+      .eq("group_id", groupId)
+      .eq("user_id", user.id)
+      .single();
+    
+    if (!memberCheck || memberCheck.role !== 'admin') {
+      return { error: new Error("Only admins can add members") };
+    }
+    
+    const { error } = await supabase
+      .from("group_members")
+      .insert({
+        group_id: groupId,
+        user_id: userId,
+        role: 'member'
+      });
+    
+    return { error };
+  };
+
+  const removeGroupMember = async (groupId, userId) => {
+    if (!user) return { error: new Error("No user") };
+    
+    // Can't remove yourself (use leaveGroup instead)
+    if (userId === user.id) {
+      return { error: new Error("Use leaveGroup to leave") };
+    }
+    
+    // Check if current user is admin
+    const { data: memberCheck } = await supabase
+      .from("group_members")
+      .select("role")
+      .eq("group_id", groupId)
+      .eq("user_id", user.id)
+      .single();
+    
+    if (!memberCheck || memberCheck.role !== 'admin') {
+      return { error: new Error("Only admins can remove members") };
+    }
+    
+    const { error } = await supabase
+      .from("group_members")
+      .delete()
+      .eq("group_id", groupId)
+      .eq("user_id", userId);
+    
+    return { error };
+  };
+
+  const leaveGroup = async (groupId) => {
+    if (!user) return { error: new Error("No user") };
+    
+    const { error } = await supabase
+      .from("group_members")
+      .delete()
+      .eq("group_id", groupId)
+      .eq("user_id", user.id);
+    
+    return { error };
+  };
+
+  const getGroupMessages = async (groupId, limit = 50) => {
+    const { data, error } = await supabase
+      .from("group_messages")
+      .select(`
+        id,
+        content,
+        created_at,
+        sender:profiles!sender_id (
+          id, username, avatar_url
+        )
+      `)
+      .eq("group_id", groupId)
+      .order("created_at", { ascending: true })
+      .limit(limit);
+    
+    return { data: data || [], error };
+  };
+
+  const sendGroupMessage = async (groupId, content) => {
+    if (!user) return { error: new Error("No user") };
+    
+    const { error } = await supabase
+      .from("group_messages")
+      .insert({
+        group_id: groupId,
+        sender_id: user.id,
+        content
+      });
+    
+    return { error };
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -179,6 +365,14 @@ export function AuthProvider({ children }) {
         uploadAvatar,
         loadProfile,
         uploadChatFiles,
+        createGroup,
+        getGroups,
+        getGroupMembers,
+        addGroupMember,
+        removeGroupMember,
+        leaveGroup,
+        getGroupMessages,
+        sendGroupMessage
       }}
     >
       {children}
