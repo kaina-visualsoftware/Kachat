@@ -184,8 +184,8 @@ export function AuthProvider({ children }) {
     
     if (groupError) return { data: null, error: groupError };
     
-    // Add members (excluding duplicates and current user)
-    const uniqueMembers = [...new Set([...memberIds, user.id])];
+    // Add members (trigger already adds creator as admin, so only add other users)
+    const uniqueMembers = memberIds;
     const memberInserts = uniqueMembers.map(userId => ({
       group_id: group.id,
       user_id: userId,

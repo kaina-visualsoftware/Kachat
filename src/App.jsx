@@ -44,17 +44,10 @@ function LoadingScreen() {
 
 function AppRoutes() {
   const { user, loading } = useAuth()
-  const [activeTab, setActiveTab] = useState('conversations') // 'conversations' or 'groups'
-
-  // Sync tab with URL on initial load
-  useEffect(() => {
+  const [activeTab, setActiveTab] = useState(() => {
     const hash = window.location.hash.slice(1)
-    if (hash.startsWith('/group')) {
-      setActiveTab('groups')
-    } else {
-      setActiveTab('conversations')
-    }
-  }, [])
+    return hash.startsWith('/group') ? 'groups' : 'conversations'
+  })
 
   if (loading) return <LoadingScreen />
 
@@ -71,7 +64,14 @@ function AppRoutes() {
       <Route path="/groups" element={
         <ProtectedRoute>
           <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
-            <GroupList />
+            <EmptyState />
+          </WhatsAppLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/groups" element={
+        <ProtectedRoute>
+          <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
+            <EmptyState />
           </WhatsAppLayout>
         </ProtectedRoute>
       } />
@@ -131,11 +131,11 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
           zIndex: 10
         }}>
           <button
-            type="button"
-            onClick={() => {
-              console.log('Clicked conversations tab')
-              setActiveTab('conversations')
-            }}
+             type="button"
+             onClick={() => {
+               setActiveTab('conversations')
+               window.location.hash = ''
+             }}
             style={{
               flex: 1,
               padding: '14px 16px',
@@ -152,11 +152,11 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
             Conversas
           </button>
           <button
-            type="button"
-            onClick={() => {
-              console.log('Clicked groups tab')
-              setActiveTab('groups')
-            }}
+             type="button"
+             onClick={() => {
+               setActiveTab('groups')
+               window.location.hash = 'groups'
+             }}
             style={{
               flex: 1,
               padding: '14px 16px',

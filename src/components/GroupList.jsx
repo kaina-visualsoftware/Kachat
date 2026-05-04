@@ -373,6 +373,16 @@ export default function GroupList() {
           <LogOut size={14} />
         </button>
       </div>
+
+      {showCreateModal && (
+        <CreateGroupModal 
+          onClose={() => setShowCreateModal(false)} 
+          onCreated={() => {
+            setShowCreateModal(false)
+            loadGroups()
+          }}
+        />
+      )}
     </div>
   )
 }

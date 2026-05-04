@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Send, Upload, Mic, Square, FileText, Download, X, Users, Settings, LogOut, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Send, Upload, Mic, Square, FileText, Download, X, Users, Settings, LogOut, Image as ImageIcon, MessageSquare, UserPlus } from 'lucide-react'
+import AddMembersModal from './AddMembersModal'
 import { renderTextWithLinks, parseFileMessage, detectCode } from '../utils/linkDetector.jsx'
 import { getCommands, processCommand } from '../utils/commands'
 
@@ -17,6 +18,7 @@ export default function ChatGroup() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
   const [status, setStatus] = useState('connecting')
+  const [showAddMembersModal, setShowAddMembersModal] = useState(false)
   const messagesEndRef = useRef(null)
   
   // File upload states
@@ -777,6 +779,35 @@ export default function ChatGroup() {
           </div>
         </div>
 
+        {isAdmin && (
+          <button
+            onClick={() => setShowAddMembersModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              background: 'rgba(139, 92, 246, 0.15)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: 10,
+              color: '#A78BFA',
+              cursor: 'pointer',
+              transition: 'all 200ms ease',
+              marginRight: 8
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(139, 92, 246, 0.25)'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(139, 92, 246, 0.15)'
+            }}
+            title="Adicionar membros"
+          >
+            <UserPlus size={16} />
+          </button>
+        )}
+
         <button
           onClick={() => {
             if (window.confirm('Deseja realmente sair deste grupo?')) {
@@ -1352,6 +1383,18 @@ export default function ChatGroup() {
             ×
           </button>
         </div>
+      )}
+
+      {showAddMembersModal && (
+        <AddMembersModal
+          groupId={groupId}
+          currentMembers={members}
+          onClose={() => setShowAddMembersModal(false)}
+          onSuccess={() => {
+            setShowAddMembersModal(false)
+            loadMembers()
+          }}
+        />
       )}
     </div>
   )
