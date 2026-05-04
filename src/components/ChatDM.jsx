@@ -34,6 +34,7 @@ export default function ChatDM() {
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioBlob, setAudioBlob] = useState(null)
+  const audioBlobRef = useRef(null)
   const [mediaRecorder, setMediaRecorder] = useState(null)
   const recordingTimerRef = useRef(null)
 
@@ -233,6 +234,7 @@ export default function ChatDM() {
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' })
         setAudioBlob(blob)
+        audioBlobRef.current = blob
         // Stop all tracks to release microphone
         stream.getTracks().forEach(track => track.stop())
       }
@@ -274,16 +276,30 @@ export default function ChatDM() {
       })
     }
     
-    if (!audioBlob) {
+    // Use ref as fallback (blob may have been set in ref but not state yet)
+    const blobToUse = audioBlob || audioBlobRef.current
+    
+    // If still no blob, wait a bit more
+    if (!blobToUse) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+    }
+    
+    const finalBlob = audioBlob || audioBlobRef.current
+    if (!finalBlob) {
       alert('Nenhum áudio gravado')
       return
+    }
+    
+    // Sync state if ref has but state doesn't
+    if (!audioBlob && finalBlob) {
+      setAudioBlob(finalBlob)
     }
     
     setUploading(true)
     try {
       // Convert Blob to File object
       const file = new File(
-        [audioBlob], 
+        [finalBlob], 
         `audio_${Date.now()}.webm`, 
         { type: 'audio/webm' }
       )
@@ -303,6 +319,7 @@ export default function ChatDM() {
       
       // Cleanup
       setAudioBlob(null)
+      audioBlobRef.current = null
       setRecordingTime(0)
     } catch (error) {
       alert('Erro ao enviar áudio: ' + error.message)
@@ -318,6 +335,7 @@ export default function ChatDM() {
     clearInterval(recordingTimerRef.current)
     setIsRecording(false)
     setAudioBlob(null)
+    audioBlobRef.current = null
     setRecordingTime(0)
   }
 
