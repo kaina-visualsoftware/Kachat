@@ -2,8 +2,186 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
-import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X, Mic, Square } from 'lucide-react'
+import { ArrowLeft, Send, Circle, MessageSquare, Upload, FileText, Download, X, Mic, Square, FileSpreadsheet, FileJson, Image as ImageIcon } from 'lucide-react'
 import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage, detectCode } from '../utils/linkDetector.jsx'
+
+function CsvPreviewModal({ data, onClose }) {
+  const [csvData, setCsvData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!data?.url) return
+    
+    fetch(data.url)
+      .then(res => res.text())
+      .then(text => {
+        const lines = text.split('\n').filter(line => line.trim())
+        const delimiter = lines[0].includes('\t') ? '\t' : ','
+        const parsed = lines.map(line => {
+          const cells = []
+          let current = ''
+          let inQuotes = false
+          
+          for (let i = 0; i < line.length; i++) {
+            const char = line[i]
+            if (char === '"') {
+              inQuotes = !inQuotes
+            } else if (char === delimiter && !inQuotes) {
+              cells.push(current.trim())
+              current = ''
+            } else {
+              current += char
+            }
+          }
+          cells.push(current.trim())
+          return cells
+        })
+        setCsvData(parsed)
+        setLoading(false)
+      })
+      .catch(err => {
+        setError('Erro ao carregar CSV')
+        setLoading(false)
+      })
+  }, [data?.url])
+
+  return (
+    <div 
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.95)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        cursor: 'pointer',
+        padding: 40
+      }}
+    >
+      <div 
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '90vw',
+          height: '90vh',
+          background: '#18181B',
+          borderRadius: 12,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          border: '1px solid rgba(63, 63, 70, 0.5)'
+        }}
+      >
+        <div style={{
+          padding: '16px 20px',
+          borderBottom: '1px solid rgba(63, 63, 70, 0.5)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <div style={{
+            fontSize: 16,
+            fontWeight: 600,
+            color: '#FAFAFA'
+          }}>
+            {data?.fileName || 'CSV Preview'}
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              fontSize: 18,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+        
+        <div style={{
+          flex: 1,
+          overflow: 'auto',
+          padding: 16
+        }}>
+          {loading && (
+            <div style={{ textAlign: 'center', padding: 40, color: '#71717A' }}>
+              Carregando CSV...
+            </div>
+          )}
+          
+          {error && (
+            <div style={{ textAlign: 'center', padding: 40, color: '#EF4444' }}>
+              {error}
+            </div>
+          )}
+          
+          {csvData && csvData.length > 0 && (
+            <table style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: 13,
+              color: '#FAFAFA'
+            }}>
+              <thead>
+                <tr>
+                  {csvData[0].map((cell, i) => (
+                    <th key={i} style={{
+                      padding: '10px 12px',
+                      borderBottom: '2px solid rgba(139, 92, 246, 0.3)',
+                      textAlign: 'left',
+                      fontWeight: 600,
+                      color: '#A78BFA',
+                      background: 'rgba(139, 92, 246, 0.1)',
+                      position: 'sticky',
+                      top: 0
+                    }}>
+                      {cell}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {csvData.slice(1).map((row, rowIdx) => (
+                  <tr key={rowIdx} style={{
+                    background: rowIdx % 2 === 0 ? 'transparent' : 'rgba(39, 39, 42, 0.5)'
+                  }}>
+                    {row.map((cell, cellIdx) => (
+                      <td key={cellIdx} style={{
+                        padding: '8px 12px',
+                        borderBottom: '1px solid rgba(63, 63, 70, 0.3)'
+                      }}>
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          
+          {csvData && csvData.length === 0 && (
+            <div style={{ textAlign: 'center', padding: 40, color: '#71717A' }}>
+              CSV vazio
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function ChatDM() {
   const { receiverId } = useParams()
@@ -29,6 +207,8 @@ export default function ChatDM() {
   const [previewPdf, setPreviewPdf] = useState(null)
   const [previewDoc, setPreviewDoc] = useState(null)
   const [previewHtml, setPreviewHtml] = useState(null)
+  const [previewCsv, setPreviewCsv] = useState(null)
+  const [previewSvg, setPreviewSvg] = useState(null)
   const [isDragOver, setIsDragOver] = useState(false)
   
   // Audio recording states
@@ -521,7 +701,163 @@ export default function ChatDM() {
          )
        }
        
-       // Generic file download
+        // SVG preview
+        if (fileName.endsWith('.svg') || fileType === 'image/svg+xml') {
+          return (
+            <div style={{ marginTop: 8, maxWidth: 300 }}>
+              <img 
+                src={url} 
+                alt={fileName}
+                style={{ 
+                  maxWidth: '100%', 
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  background: 'rgba(255, 255, 255, 0.05)'
+                }}
+                onClick={() => setPreviewSvg(url)}
+              />
+              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4, color: isMe ? '#BFDBFE' : '#818CF8' }}>
+                {fileName} ({(fileSize / 1024).toFixed(1)} KB)
+              </div>
+            </div>
+          )
+        }
+        
+        // ICO preview
+        if (fileName.endsWith('.ico') || fileType === 'image/x-icon' || fileType === 'image/vnd.microsoft.icon') {
+          return (
+            <div style={{ marginTop: 8, maxWidth: 300 }}>
+              <img 
+                src={url} 
+                alt={fileName}
+                style={{ 
+                  maxWidth: '100%', 
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  background: 'rgba(255, 255, 255, 0.05)'
+                }}
+                onClick={() => setPreviewImage(url)}
+              />
+              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4, color: isMe ? '#BFDBFE' : '#818CF8' }}>
+                {fileName} ({(fileSize / 1024).toFixed(1)} KB)
+              </div>
+            </div>
+          )
+        }
+        
+        // CSV preview
+        if (fileName.endsWith('.csv') || fileType === 'text/csv' || fileType === 'text/tab-separated-values') {
+          return (
+            <div 
+              style={{ marginTop: 8, cursor: 'pointer' }}
+              onClick={() => setPreviewCsv({ url, fileName, fileSize })}
+            >
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8, 
+                padding: '12px 16px', 
+                background: 'rgba(16, 185, 129, 0.1)', 
+                border: '1px solid rgba(16, 185, 129, 0.3)', 
+                borderRadius: 12,
+                color: isMe ? '#6EE7B7' : '#34D399'
+              }}>
+                <FileSpreadsheet size={16} />
+                <div>
+                  <div style={{ fontWeight: 500 }}>{fileName}</div>
+                  <div style={{ fontSize: 11, opacity: 0.7 }}>
+                    {(fileSize / 1024).toFixed(1)} KB - Clique para visualizar tabela
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+        
+        // JSON preview
+        if (fileName.endsWith('.json') || fileType === 'application/json') {
+          return (
+            <div 
+              style={{ marginTop: 8, cursor: 'pointer' }}
+              onClick={() => setPreviewDoc({ url, fileName, fileType: 'application/json' })}
+            >
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8, 
+                padding: '12px 16px', 
+                background: 'rgba(245, 158, 11, 0.1)', 
+                border: '1px solid rgba(245, 158, 11, 0.3)', 
+                borderRadius: 12,
+                color: isMe ? '#FCD34D' : '#FBBF24'
+              }}>
+                <FileJson size={16} />
+                <div>
+                  <div style={{ fontWeight: 500 }}>{fileName}</div>
+                  <div style={{ fontSize: 11, opacity: 0.7 }}>
+                    {(fileSize / 1024).toFixed(1)} KB - Clique para visualizar JSON
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+        
+        // XML preview
+        if (fileName.endsWith('.xml') || fileType === 'text/xml' || fileType === 'application/xml') {
+          return (
+            <div 
+              style={{ marginTop: 8, cursor: 'pointer' }}
+              onClick={() => setPreviewDoc({ url, fileName, fileType: 'text/xml' })}
+            >
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8, 
+                padding: '12px 16px', 
+                background: 'rgba(236, 72, 153, 0.1)', 
+                border: '1px solid rgba(236, 72, 153, 0.3)', 
+                borderRadius: 12,
+                color: isMe ? '#F9A8D4' : '#F472B6'
+              }}>
+                <FileText size={16} />
+                <div>
+                  <div style={{ fontWeight: 500 }}>{fileName}</div>
+                  <div style={{ fontSize: 11, opacity: 0.7 }}>
+                    {(fileSize / 1024).toFixed(1)} KB - Clique para visualizar XML
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }
+        
+        // ZIP preview
+        if (fileName.endsWith('.zip') || fileType === 'application/zip' || fileType === 'application/x-zip-compressed') {
+          return (
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 8, 
+              padding: '12px 16px', 
+              background: 'rgba(99, 102, 241, 0.1)', 
+              border: '1px solid rgba(99, 102, 241, 0.3)', 
+              borderRadius: 12,
+              color: isMe ? '#C7D2FE' : '#A5B4FC',
+              marginTop: 8
+            }}>
+              <Download size={16} />
+              <div>
+                <div style={{ fontWeight: 500 }}>{fileName}</div>
+                <div style={{ fontSize: 11, opacity: 0.7 }}>
+                  {(fileSize / 1024).toFixed(1)} KB
+                </div>
+              </div>
+            </div>
+          )
+        }
+        
+        // Generic file download
        return (
          <a
            href={url}
@@ -1604,6 +1940,67 @@ export default function ChatDM() {
             ×
           </button>
         </div>
+      )}
+
+      {/* SVG Preview Modal */}
+      {previewSvg && (
+        <div 
+          onClick={() => setPreviewSvg(null)}
+          style={{
+            position: 'fixed',
+            top:0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'pointer',
+            padding: 40
+          }}
+        >
+          <img
+            src={previewSvg}
+            alt="SVG Preview"
+            style={{
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              borderRadius: 12,
+              objectFit: 'contain'
+            }}
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setPreviewSvg(null)
+            }}
+            style={{
+              position: 'absolute',
+              top: 20,
+              right: 20,
+              width: 40,
+              height: 40,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              fontSize: 20,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* CSV Preview Modal */}
+      {previewCsv && (
+        <CsvPreviewModal data={previewCsv} onClose={() => setPreviewCsv(null)} />
       )}
     </div>
   )
