@@ -609,7 +609,7 @@ export default function ChatGroup() {
     }
     
     // Regular text message
-    const textParts = renderTextWithLinks(content, isMe)
+    const textParts = renderTextWithLinks(content, isMe, true, members)
     if (Array.isArray(textParts)) {
       return (
         <div style={{ 
@@ -651,6 +651,23 @@ export default function ChatGroup() {
                     onClick={() => window.open(part.url, '_blank')}
                   >
                     {part.url}
+                  </span>
+                  {' '}
+                </span>
+              )
+            } else if (part.type === 'mention') {
+              return (
+                <span key={part.key}>
+                  <span 
+                    style={{ 
+                      color: part.isValid ? '#A78BFA' : '#EF4444',
+                      background: part.isValid ? 'rgba(139, 92, 246, 0.2)' : 'rgba(239, 68, 68, 0.15)',
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      fontWeight: 500
+                    }}
+                  >
+                    {part.content}
                   </span>
                   {' '}
                 </span>
