@@ -25,16 +25,85 @@ export function detectUrls(text) {
   return text.match(urlRegex) || [];
 }
 
-export function renderTextWithLinks(text, isMe) {
+export function detectMentions(text) {
+  if (!text) return [];
+  const mentionRegex = /@([a-zA-Z0-9_]+)/g;
+  const matches = text.match(mentionRegex);
+  return matches ? matches.map(m => m.slice(1)) : [];
+}
+
+export function renderTextWithLinks(text, isMe, highlightMentions = false, members = []) {
+  if (!text) return <span></span>;
+  
+  // Primeiro processar menções se habilitado
+  if (highlightMentions && members.length > 0) {
+    const mentionPattern = /@([a-zA-Z0-9_]+)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = mentionPattern.exec(text)) !== null) {
+      // Adicionar texto antes da menção
+      if (match.index > lastIndex) {
+        const textPart = text.slice(lastIndex, match.index);
+        const urlParts = processUrls(textPart);
+        parts.push(...urlParts.map(p => ({ ...p, key: parts.length })));
+      }
+      
+      // Adicionar menção destacada
+      const username = match[1];
+      const isMentioned = members.some(m => 
+        m.username?.toLowerCase() === username.toLowerCase()
+      );
+      
+      parts.push({
+        type: 'mention',
+        content: match[0],
+        username,
+        isValid: isMentioned,
+        key: parts.length
+      });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Adicionar texto restante
+    if (lastIndex < text.length) {
+      const textPart = text.slice(lastIndex);
+      const urlParts = processUrls(textPart);
+      parts.push(...urlParts.map(p => ({ ...p, key: parts.length })));
+    }
+    
+    return parts.length > 0 ? parts : <span>{text}</span>;
+  }
+  
+  // Comportamento original sem highlight de menções
   const urls = detectUrls(text);
   
   if (urls.length === 0) {
     return <span>{text}</span>;
   }
   
-  // Split text by URLs
   const parts = text.split(/(https?:\/\/[^\s]+)/g);
   
+  return parts.map((part, index) => {
+    if (detectUrls(part).length > 0) {
+      const videoId = extractYouTubeVideoId(part);
+      if (videoId) {
+        return { type: 'youtube', url: part, videoId, key: index };
+      } else {
+        return { type: 'link', url: part, key: index };
+      }
+    }
+    return { type: 'text', content: part, key: index };
+  }).filter(Boolean);
+}
+
+function processUrls(text) {
+  const urls = detectUrls(text);
+  if (urls.length === 0) return [{ type: 'text', content: text }];
+  
+  const parts = text.split(/(https?:\/\/[^\s]+)/g);
   return parts.map((part, index) => {
     if (detectUrls(part).length > 0) {
       const videoId = extractYouTubeVideoId(part);

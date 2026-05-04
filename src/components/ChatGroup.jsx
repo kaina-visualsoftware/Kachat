@@ -49,6 +49,14 @@ export default function ChatGroup() {
   const [showCommandList, setShowCommandList] = useState(false)
   const [filteredCommands, setFilteredCommands] = useState([])
   const [commandIndex, setCommandIndex] = useState(-1)
+  
+  // Mention autocomplete states
+  const [showMentionList, setShowMentionList] = useState(false)
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionFilter, setMentionFilter] = useState([])
+  const [mentionIndex, setMentionIndex] = useState(0)
+  const mentionInputRef = useRef(null)
+  
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -108,8 +116,7 @@ export default function ChatGroup() {
     const { data, error } = await getGroupMembers(groupId)
     if (!error && data) {
       setMembers(data)
-      // Check if current user is admin
-      const current = data.find(m => m.id === user.id)
+      const current = data.find(m => m.id === user.id || m.user_id === user.id)
       setIsAdmin(current?.role === 'admin')
     }
   }
@@ -1168,14 +1175,61 @@ export default function ChatGroup() {
                 setFilteredCommands(matches)
                 setShowCommandList(matches.length > 0 && query.length > 0)
                 setCommandIndex(-1)
+                setShowMentionList(false)
+              } 
+              // Detect mention (@username)
+              else if (value.includes('@')) {
+                const lastAtIndex = value.lastIndexOf('@')
+                const textAfterAt = value.slice(lastAtIndex + 1)
+                
+                // Verificar se é um cursor válido para menção (após @ não tem espaço)
+                const hasSpaceAfter = textAfterAt.includes(' ')
+                
+                if (!hasSpaceAfter && textAfterAt.length >= 0) {
+                  const query = textAfterAt.toLowerCase()
+                  const filtered = members.filter(m => 
+                    m.username && m.username.toLowerCase().includes(query)
+                  ).slice(0, 8)
+                  
+                  setMentionQuery(query)
+                  setMentionFilter(filtered)
+                  setShowMentionList(filtered.length > 0)
+                  setMentionIndex(0)
+                  setShowCommandList(false)
+                } else {
+                  setShowMentionList(false)
+                }
               } else {
                 setShowCommandList(false)
+                setShowMentionList(false)
               }
             }}
             onKeyDown={e => {
               // Shift + Enter = new line (default behavior)
               if (e.key === 'Enter' && e.shiftKey) {
                 // Allow default behavior (new line)
+                return
+              }
+              
+              if (showMentionList && mentionFilter.length > 0) {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  setMentionIndex(prev => (prev + 1) % mentionFilter.length)
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  setMentionIndex(prev => prev <= 0 ? mentionFilter.length - 1 : prev - 1)
+                } else if (e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) {
+                  e.preventDefault()
+                  const selected = mentionFilter[mentionIndex]
+                  if (selected) {
+                    const lastAtIndex = input.lastIndexOf('@')
+                    const newInput = input.slice(0, lastAtIndex) + '@' + selected.username + ' '
+                    setInput(newInput)
+                    setShowMentionList(false)
+                  }
+                } else if (e.key === 'Escape') {
+                  setShowMentionList(false)
+                }
                 return
               }
               
@@ -1307,6 +1361,79 @@ export default function ChatGroup() {
                     color: '#71717A'
                   }}>
                     {cmd.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Mention Autocomplete List */}
+          {showMentionList && mentionFilter.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: 0,
+              marginBottom: 8,
+              background: 'rgba(39, 39, 42, 0.98)',
+              border: '1px solid rgba(63, 63, 70, 0.5)',
+              borderRadius: 12,
+              maxHeight: 240,
+              width: 280,
+              overflowY: 'auto',
+              zIndex: 100
+            }}>
+              {mentionFilter.map((member, idx) => (
+                <div
+                  key={member.id || member.user_id}
+                  onClick={() => {
+                    const lastAtIndex = input.lastIndexOf('@')
+                    const newInput = input.slice(0, lastAtIndex) + '@' + member.username + ' '
+                    setInput(newInput)
+                    setShowMentionList(false)
+                    inputRef.current?.focus()
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '10px 14px',
+                    cursor: 'pointer',
+                    background: idx === mentionIndex ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+                    borderBottom: idx < mentionFilter.length - 1 ? '1px solid rgba(63, 63, 70, 0.3)' : 'none',
+                    transition: 'background 100ms ease'
+                  }}
+                  onMouseEnter={() => setMentionIndex(idx)}
+                >
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: member.avatar_url ? 'transparent' : 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: 'white',
+                    flexShrink: 0,
+                    overflow: 'hidden'
+                  }}>
+                    {member.avatar_url ? (
+                      <img 
+                        src={member.avatar_url} 
+                        alt={member.username}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      member.username?.charAt(0).toUpperCase() || '?'
+                    )}
+                  </div>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: '#FAFAFA'
+                  }}>
+                    @{member.username}
                   </div>
                 </div>
               ))}

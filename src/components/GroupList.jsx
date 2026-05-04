@@ -8,7 +8,7 @@ export default function GroupList() {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const { user, signOut, getGroups } = useAuth()
+  const { user, signOut, getGroups, profile } = useAuth()
   const navigate = useNavigate()
   const [showCreateModal, setShowCreateModal] = useState(false)
 
@@ -287,14 +287,14 @@ export default function GroupList() {
           flexShrink: 0,
           overflow: 'hidden'
         }}>
-          {useAuth().profile?.avatar_url ? (
+          {profile?.avatar_url ? (
             <img 
-              src={useAuth().profile.avatar_url} 
+              src={profile.avatar_url} 
               alt="avatar"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
-            getInitials(useAuth().profile?.username || user?.email || 'U')
+            getInitials(profile?.username || user?.email || 'U')
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -306,7 +306,7 @@ export default function GroupList() {
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
           }}>
-            {useAuth().profile?.username || user?.email}
+            {profile?.username || user?.email}
           </div>
           <div style={{ fontSize: 11, color: '#71717A' }}>
             Online

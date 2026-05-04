@@ -237,20 +237,31 @@ export function AuthProvider({ children }) {
   };
 
   const getGroupMembers = async (groupId) => {
-    const { data, error } = await supabase
+    const { data: members, error } = await supabase
       .from("group_members")
-      .select(`
-        role,
-        profiles:user_id (
-          id, username, avatar_url
-        )
-      `)
+      .select("user_id, role")
       .eq("group_id", groupId);
     
-    return { data: data?.map(gm => ({
-      ...gm.profiles,
-      role: gm.role
-    })) || [], error };
+    if (error || !members) return { data: [], error };
+    
+    const userIds = members.map(m => m.user_id).filter(Boolean);
+    if (userIds.length === 0) return { data: [], error: null };
+    
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .in("id", userIds);
+    
+    const data = members.map(m => {
+      const profile = profiles?.find(p => p.id === m.user_id);
+      return {
+        ...profile,
+        user_id: m.user_id,
+        role: m.role
+      };
+    }).filter(m => m.id);
+    
+    return { data, error: null };
   };
 
   const addGroupMember = async (groupId, userId) => {
@@ -321,21 +332,29 @@ export function AuthProvider({ children }) {
   };
 
   const getGroupMessages = async (groupId, limit = 50) => {
-    const { data, error } = await supabase
+    const { data: messages, error } = await supabase
       .from("group_messages")
-      .select(`
-        id,
-        content,
-        created_at,
-        sender:profiles!sender_id (
-          id, username, avatar_url
-        )
-      `)
+      .select("id, content, created_at, sender_id")
       .eq("group_id", groupId)
       .order("created_at", { ascending: true })
       .limit(limit);
     
-    return { data: data || [], error };
+    if (error || !messages) return { data: [], error };
+    
+    const senderIds = [...new Set(messages.map(m => m.sender_id))];
+    if (senderIds.length === 0) return { data: [], error: null };
+    
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .in("id", senderIds);
+    
+    const data = messages.map(m => ({
+      ...m,
+      sender: profiles?.find(p => p.id === m.sender_id)
+    }));
+    
+    return { data, error: null };
   };
 
   const sendGroupMessage = async (groupId, content) => {
