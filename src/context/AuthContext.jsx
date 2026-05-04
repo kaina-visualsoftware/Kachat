@@ -72,7 +72,7 @@ export function AuthProvider({ children }) {
 
     const fileExt = file.name.split(".").pop();
     const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
+    const filePath = `${user.id}/${fileName}`;
     // Upload file
     const { error: uploadError } = await supabase.storage
       .from("avatars")
@@ -82,8 +82,13 @@ export function AuthProvider({ children }) {
     const {
       data: { publicUrl },
     } = supabase.storage.from("avatars").getPublicUrl(filePath);
-    // Update profile with avatar URL
-    return updateProfile({ avatar_url: publicUrl });
+    
+    // Update profile with avatar URL and reload profile
+    const result = await updateProfile({ avatar_url: publicUrl });
+    if (!result.error) {
+      await loadProfile(user.id);
+    }
+    return result;
   };
   const uploadChatFiles = async (files, receiverId) => {
     if (!user) return { error: new Error("No user") };
