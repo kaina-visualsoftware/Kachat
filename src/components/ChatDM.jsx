@@ -7,7 +7,7 @@ import { extractYouTubeVideoId, renderTextWithLinks, parseFileMessage, detectCod
 
 export default function ChatDM() {
   const { receiverId } = useParams()
-  const { user, uploadChatFiles } = useAuth()
+  const { user, profile, uploadChatFiles } = useAuth()
   const navigate = useNavigate()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
@@ -852,61 +852,100 @@ export default function ChatDM() {
                 key={m.id}
                 style={{
                   display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: isMe ? 'flex-end' : 'flex-start',
+                  flexDirection: 'row',
+                  alignItems: 'flex-start',
+                  gap: 8,
                   animation: 'fadeInUp 300ms ease forwards',
                   opacity: 0,
                   animationDelay: `${Math.min(index * 30, 500)}ms`,
-                  animationFillMode: 'forwards'
+                  animationFillMode: 'forwards',
+                  flexDirection: isMe ? 'row-reverse' : 'row'
                 }}
               >
-                {/* Sender Name */}
+                {/* Avatar */}
                 <div style={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: 'rgba(250, 250, 250, 0.4)',
-                  marginBottom: 4,
-                  paddingLeft: isMe ? 0 : 8,
-                  paddingRight: isMe ? 8 : 0
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: isMe 
+                    ? 'linear-gradient(135deg, #8B5CF6, #7C3AED)' 
+                    : 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'white',
+                  flexShrink: 0,
+                  overflow: 'hidden'
                 }}>
-                  {getSenderName(m)}
+                  {(isMe ? profile?.avatar_url : receiverProfile?.avatar_url) ? (
+                    <img 
+                      src={isMe ? profile.avatar_url : receiverProfile.avatar_url}
+                      alt="avatar"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <span>{getInitials(isMe ? (profile?.username || currentUserName || 'U') : (receiverProfile?.username || receiverName || 'C'))}</span>
+                  )}
                 </div>
 
-                {/* Message Bubble */}
+                {/* Message Content */}
                 <div style={{
-                  maxWidth: '90%',
-                  padding: '10px 14px',
-                  background: isMe 
-                    ? 'rgba(139, 92, 246, 0.2)' 
-                    : 'rgba(39, 39, 42, 0.9)',
-                  border: '1px solid',
-                  borderColor: isMe 
-                    ? 'rgba(139, 92, 246, 0.3)' 
-                    : 'rgba(63, 63, 70, 0.5)',
-                  borderLeft: `3px solid ${isMe ? '#8B5CF6' : 'transparent'}`,
-                  borderRadius: 14,
-                  borderTopRightRadius: isMe ? 4 : 14,
-                  borderTopLeftRadius: isMe ? 14 : 4,
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                  wordWrap: 'break-word'
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: isMe ? 'flex-end' : 'flex-start',
+                  flex: 1,
+                  minWidth: 0
                 }}>
+                  {/* Sender Name */}
                   <div style={{
-                    fontSize: 13,
-                    color: '#FAFAFA',
-                    lineHeight: 1.5,
-                    marginBottom: 6
+                    fontSize: 11,
+                    fontWeight: 500,
+                    color: 'rgba(250, 250, 250, 0.4)',
+                    marginBottom: 4,
+                    paddingLeft: isMe ? 0 : 8,
+                    paddingRight: isMe ? 8 : 0
                   }}>
-                    {renderMessageContent(m.content, isMe)}
+                    {getSenderName(m)}
                   </div>
+
+                  {/* Message Bubble */}
                   <div style={{
-                    fontSize: 10,
-                    color: 'rgba(250, 250, 250, 0.3)',
-                    textAlign: 'right'
+                    maxWidth: '90%',
+                    padding: '10px 14px',
+                    background: isMe 
+                      ? 'rgba(139, 92, 246, 0.2)' 
+                      : 'rgba(39, 39, 42, 0.9)',
+                    border: '1px solid',
+                    borderColor: isMe 
+                      ? 'rgba(139, 92, 246, 0.3)' 
+                      : 'rgba(63, 63, 70, 0.5)',
+                    borderLeft: `3px solid ${isMe ? '#8B5CF6' : 'transparent'}`,
+                    borderRadius: 14,
+                    borderTopRightRadius: isMe ? 4 : 14,
+                    borderTopLeftRadius: isMe ? 14 : 4,
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                    wordWrap: 'break-word'
                   }}>
-                    {new Date(m.created_at).toLocaleTimeString('pt-BR', { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
+                    <div style={{
+                      fontSize: 13,
+                      color: '#FAFAFA',
+                      lineHeight: 1.5,
+                      marginBottom: 6
+                    }}>
+                      {renderMessageContent(m.content, isMe)}
+                    </div>
+                    <div style={{
+                      fontSize: 10,
+                      color: 'rgba(250, 250, 250, 0.3)',
+                      textAlign: 'right'
+                    }}>
+                      {new Date(m.created_at).toLocaleTimeString('pt-BR', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
