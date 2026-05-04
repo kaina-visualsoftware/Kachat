@@ -858,34 +858,31 @@ export default function ChatDM() {
         }
         
         // Generic file download
-       return (
-         <a
-           href={url}
-           download={fileName}
-           target="_blank"
-           rel="noopener noreferrer"
-           style={{
-             display: 'flex',
-             alignItems: 'center',
-             gap: 8,
-             padding: '12px 16px',
-             background: 'rgba(139, 92, 246, 0.1)',
-             border: '1px solid rgba(139, 92, 246, 0.3)',
-             borderRadius: 12,
-             color: isMe ? '#BFDBFE' : '#818CF8',
-             textDecoration: 'none',
-             marginTop: 8
-           }}
-         >
-           <Download size={16} />
-           <div>
-             <div style={{ fontWeight: 500 }}>{fileName}</div>
-             <div style={{ fontSize: 11, opacity: 0.7 }}>
-               {(fileSize / 1024).toFixed(1)} KB
-             </div>
-           </div>
-         </a>
-        )
+        return (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              background: 'rgba(139, 92, 246, 0.1)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: 12,
+              color: isMe ? '#BFDBFE' : '#818CF8',
+              marginTop: 8,
+              cursor: 'pointer'
+            }}
+            onClick={() => window.open(url, '_blank')}
+          >
+            <Download size={16} />
+            <div>
+              <div style={{ fontWeight: 500 }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.7 }}>
+                {(fileSize / 1024).toFixed(1)} KB
+              </div>
+            </div>
+          </div>
+         )
       }
       
       // Code preview

@@ -102,7 +102,7 @@ export function AuthProvider({ children }) {
 
     // Upload all files in parallel
     const uploadPromises = Array.from(files).map(async (file) => {
-      const fileExt = file.name.split(".").pop();
+      const fileExt = file.name.split(".").pop().toLowerCase();
       const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
@@ -115,10 +115,46 @@ export function AuthProvider({ children }) {
         data: { publicUrl },
       } = supabase.storage.from("chat-files").getPublicUrl(fileName);
 
+      // Infer MIME type from extension if browser didn't detect it
+      const mimeTypeMap = {
+        xml: 'text/xml',
+        json: 'application/json',
+        csv: 'text/csv',
+        svg: 'image/svg+xml',
+        ico: 'image/x-icon',
+        zip: 'application/zip',
+        pdf: 'application/pdf',
+        txt: 'text/plain',
+        md: 'text/markdown',
+        html: 'text/html',
+        htm: 'text/html',
+        js: 'text/javascript',
+        ts: 'text/typescript',
+        css: 'text/css',
+        py: 'text/x-python',
+        java: 'text/x-java',
+        cpp: 'text/x-c++',
+        c: 'text/x-c',
+        h: 'text/x-c',
+        php: 'text/x-php',
+        rb: 'text/x-ruby',
+        go: 'text/x-go',
+        rs: 'text/x-rust',
+        sql: 'text/x-sql',
+        sh: 'text/x-sh',
+        yaml: 'text/yaml',
+        yml: 'text/yaml',
+        toml: 'text/toml',
+        ini: 'text/plain',
+        log: 'text/plain',
+      };
+
+      const inferredType = file.type || mimeTypeMap[fileExt] || 'application/octet-stream';
+
       return {
         url: publicUrl,
         fileName: file.name,
-        fileType: file.type,
+        fileType: inferredType,
         fileSize: file.size,
       };
     });
