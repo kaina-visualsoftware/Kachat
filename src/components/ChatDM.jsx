@@ -13,6 +13,7 @@ export default function ChatDM() {
   const [input, setInput] = useState('')
   const [receiverName, setReceiverName] = useState('')
   const [currentUserName, setCurrentUserName] = useState('')
+  const [receiverProfile, setReceiverProfile] = useState(null)
   const [status, setStatus] = useState('connecting')
   const messagesEndRef = useRef(null)
   
@@ -342,6 +343,23 @@ export default function ChatDM() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Load receiver profile when receiverId changes
+  useEffect(() => {
+    if (!receiverId) return
+    
+    const loadReceiverProfile = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, avatar_url')
+        .eq('id', receiverId)
+        .single()
+      
+      if (data) setReceiverProfile(data)
+    }
+    
+    loadReceiverProfile()
+  }, [receiverId])
 
   const getSenderName = (message) => {
     if (message.sender_id === user.id) {
