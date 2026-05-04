@@ -89,58 +89,27 @@ export default function GroupList() {
           }}>
             Grupos
           </h1>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 36,
-                height: 36,
-                background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
-                border: 'none',
-                borderRadius: 10,
-                color: 'white',
-                cursor: 'pointer',
-                transition: 'all 200ms ease'
-              }}
-              onMouseEnter={(e) => { e.target.style.transform = 'scale(1.1)' }}
-              onMouseLeave={(e) => { e.target.style.transform = 'scale(1)' }}
-              title="Criar grupo"
-            >
-              <Plus size={16} />
-            </button>
-            <button
-              onClick={signOut}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 36,
-                height: 36,
-                background: 'rgba(63, 63, 70, 0.3)',
-                border: '1px solid rgba(63, 63, 70, 0.5)',
-                borderRadius: 10,
-                color: '#A1A1AA',
-                cursor: 'pointer',
-                transition: 'all 200ms ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'rgba(239, 68, 68, 0.15)'
-                e.target.style.color = '#EF4444'
-                e.target.style.borderColor = 'rgba(239, 68, 68, 0.3)'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'rgba(63, 63, 70, 0.3)'
-                e.target.style.color = '#A1A1AA'
-                e.target.style.borderColor = 'rgba(63, 63, 70, 0.5)'
-              }}
-              title="Sair"
-            >
-              <LogOut size={16} />
-            </button>
-          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+              border: 'none',
+              borderRadius: 10,
+              color: 'white',
+              cursor: 'pointer',
+              transition: 'all 200ms ease'
+            }}
+            onMouseEnter={(e) => { e.target.style.transform = 'scale(1.1)' }}
+            onMouseLeave={(e) => { e.target.style.transform = 'scale(1)' }}
+            title="Criar grupo"
+          >
+            <Plus size={16} />
+          </button>
         </div>
 
         {/* Search Input */}
@@ -373,18 +342,37 @@ export default function GroupList() {
         >
           <Settings size={14} />
         </button>
-      </div>
-
-      {/* Create Group Modal */}
-      {showCreateModal && (
-        <CreateGroupModal 
-          onClose={() => setShowCreateModal(false)}
-          onCreated={() => {
-            setShowCreateModal(false)
-            loadGroups()
+        <button
+          onClick={signOut}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            background: 'rgba(63, 63, 70, 0.3)',
+            border: '1px solid rgba(63, 63, 70, 0.5)',
+            borderRadius: 8,
+            color: '#A1A1AA',
+            cursor: 'pointer',
+            transition: 'all 200ms ease',
+            flexShrink: 0
           }}
-        />
-      )}
+          onMouseEnter={(e) => {
+            e.target.style.background = 'rgba(239, 68, 68, 0.15)'
+            e.target.style.color = '#EF4444'
+            e.target.style.borderColor = 'rgba(239, 68, 68, 0.3)'
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = 'rgba(63, 63, 70, 0.3)'
+            e.target.style.color = '#A1A1AA'
+            e.target.style.borderColor = 'rgba(63, 63, 70, 0.5)'
+          }}
+          title="Sair"
+        >
+          <LogOut size={14} />
+        </button>
+      </div>
     </div>
   )
 }
