@@ -8,7 +8,7 @@ export default function UserList() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const { user, signOut } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function UserList() {
   const loadUsers = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, username')
+      .select('id, username, avatar_url')
       .neq('id', user.id)
     
     // Filter out users without username (deleted users)
@@ -206,7 +206,7 @@ export default function UserList() {
               <div style={{
                 width: 44,
                 height: 44,
-                borderRadius: 14,
+                borderRadius: '50%',
                 background: getAvatarColor(u.id),
                 display: 'flex',
                 alignItems: 'center',
@@ -214,9 +214,18 @@ export default function UserList() {
                 fontSize: 16,
                 fontWeight: 600,
                 color: 'white',
-                flexShrink: 0
+                flexShrink: 0,
+                overflow: 'hidden'
               }}>
-                {getInitials(u.username)}
+                {u.avatar_url ? (
+                  <img 
+                    src={u.avatar_url} 
+                    alt={u.username}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  getInitials(u.username)
+                )}
               </div>
 
               {/* User Info */}
@@ -269,7 +278,7 @@ export default function UserList() {
         <div style={{
           width: 36,
           height: 36,
-          borderRadius: 10,
+          borderRadius: '50%',
           background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
           display: 'flex',
           alignItems: 'center',
@@ -277,9 +286,18 @@ export default function UserList() {
           fontSize: 14,
           fontWeight: 600,
           color: 'white',
-          flexShrink: 0
+          flexShrink: 0,
+          overflow: 'hidden'
         }}>
-          {getInitials(user?.email || 'U')}
+          {profile?.avatar_url ? (
+            <img 
+              src={profile.avatar_url} 
+              alt="avatar"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            getInitials(profile?.username || user?.email || 'U')
+          )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -290,7 +308,7 @@ export default function UserList() {
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap'
           }}>
-            {user?.email}
+            {profile?.username || user?.email}
           </div>
           <div style={{ fontSize: 11, color: '#71717A' }}>
             Online
@@ -304,27 +322,35 @@ export default function UserList() {
             justifyContent: 'center',
             width: 32,
             height: 32,
-            background: 'rgba(63, 63, 70, 0.3)',
-            border: '1px solid rgba(63, 63, 70, 0.5)',
-            borderRadius: 8,
-            color: '#A1A1AA',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+            border: 'none',
+            overflow: 'hidden',
             cursor: 'pointer',
             transition: 'all 200ms ease',
             flexShrink: 0
           }}
           onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(139, 92, 246, 0.15)'
-            e.target.style.color = '#A78BFA'
-            e.target.style.borderColor = 'rgba(139, 92, 246, 0.3)'
+            e.target.style.transform = 'scale(1.1)'
+            e.target.style.boxShadow = '0 0 12px rgba(139, 92, 246, 0.5)'
           }}
           onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(63, 63, 70, 0.3)'
-            e.target.style.color = '#A1A1AA'
-            e.target.style.borderColor = 'rgba(63, 63, 70, 0.5)'
+            e.target.style.transform = 'scale(1)'
+            e.target.style.boxShadow = 'none'
           }}
           title="Meu Perfil"
         >
-          <UserCog size={14} />
+          {profile?.avatar_url ? (
+            <img 
+              src={profile.avatar_url} 
+              alt="perfil"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <span style={{ color: 'white', fontSize: 12, fontWeight: 600 }}>
+              {getInitials(profile?.username || 'U')}
+            </span>
+          )}
         </button>
       </div>
     </div>
