@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './components/Login'
 import UserList from './components/UserList'
@@ -115,9 +115,9 @@ function WhatsAppLayout({ children }) {
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/Kachat/">
+      <HashRouter>
         <AppRoutes />
-      </BrowserRouter>
+      </HashRouter>
     </AuthProvider>
   )
 }
