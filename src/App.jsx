@@ -7,6 +7,7 @@ import GroupList from './components/GroupList'
 import ChatGroup from './components/ChatGroup'
 import EmptyState from './components/EmptyState'
 import Profile from './components/Profile'
+import { useState, useEffect } from 'react'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -43,6 +44,17 @@ function LoadingScreen() {
 
 function AppRoutes() {
   const { user, loading } = useAuth()
+  const [activeTab, setActiveTab] = useState('conversations') // 'conversations' or 'groups'
+
+  // Sync tab with URL on initial load
+  useEffect(() => {
+    const hash = window.location.hash.slice(1)
+    if (hash.startsWith('/group')) {
+      setActiveTab('groups')
+    } else {
+      setActiveTab('conversations')
+    }
+  }, [])
 
   if (loading) return <LoadingScreen />
 
@@ -51,35 +63,35 @@ function AppRoutes() {
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/" element={
         <ProtectedRoute>
-          <WhatsAppLayout>
+          <WhatsAppLayout activeTab={activeTab} setActiveTab={setActiveTab}>
             <EmptyState />
           </WhatsAppLayout>
         </ProtectedRoute>
       } />
       <Route path="/groups" element={
         <ProtectedRoute>
-          <WhatsAppLayout>
+          <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
             <GroupList />
           </WhatsAppLayout>
         </ProtectedRoute>
       } />
       <Route path="/group/:groupId" element={
         <ProtectedRoute>
-          <WhatsAppLayout>
+          <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
             <ChatGroup />
           </WhatsAppLayout>
         </ProtectedRoute>
       } />
       <Route path="/chat/:receiverId" element={
         <ProtectedRoute>
-          <WhatsAppLayout>
+          <WhatsAppLayout activeTab="conversations" setActiveTab={setActiveTab}>
             <ChatDM />
           </WhatsAppLayout>
         </ProtectedRoute>
       } />
       <Route path="/profile" element={
         <ProtectedRoute>
-          <WhatsAppLayout>
+          <WhatsAppLayout activeTab={activeTab} setActiveTab={setActiveTab}>
             <Profile />
           </WhatsAppLayout>
         </ProtectedRoute>
@@ -89,11 +101,7 @@ function AppRoutes() {
   )
 }
 
-function WhatsAppLayout({ children }) {
-  // Determine if we're showing groups or users
-  const location = window.location.hash.slice(1) // Remove # from hash
-  const showGroups = location.startsWith('/group') || location.startsWith('/groups')
-  
+function WhatsAppLayout({ children, activeTab, setActiveTab }) {
   return (
     <div style={{
       display: 'flex',
@@ -115,7 +123,51 @@ function WhatsAppLayout({ children }) {
         flexDirection: 'column',
         overflow: 'hidden'
       }}>
-        {showGroups ? <GroupList /> : <UserList />}
+        {/* Tabs */}
+        <div style={{
+          display: 'flex',
+          borderBottom: '1px solid rgba(63, 63, 70, 0.5)'
+        }}>
+          <button
+            onClick={() => setActiveTab('conversations')}
+            style={{
+              flex: 1,
+              padding: '14px 16px',
+              background: activeTab === 'conversations' ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'conversations' ? '2px solid #8B5CF6' : '2px solid transparent',
+              color: activeTab === 'conversations' ? '#A78BFA' : '#71717A',
+              fontSize: 13,
+              fontWeight: activeTab === 'conversations' ? 600 : 400,
+              cursor: 'pointer',
+              transition: 'all 200ms ease'
+            }}
+          >
+            Conversas
+          </button>
+          <button
+            onClick={() => setActiveTab('groups')}
+            style={{
+              flex: 1,
+              padding: '14px 16px',
+              background: activeTab === 'groups' ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+              border: 'none',
+              borderBottom: activeTab === 'groups' ? '2px solid #8B5CF6' : '2px solid transparent',
+              color: activeTab === 'groups' ? '#A78BFA' : '#71717A',
+              fontSize: 13,
+              fontWeight: activeTab === 'groups' ? 600 : 400,
+              cursor: 'pointer',
+              transition: 'all 200ms ease'
+            }}
+          >
+            Grupos
+          </button>
+        </div>
+
+        {/* Content based on active tab */}
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          {activeTab === 'conversations' ? <UserList /> : <GroupList />}
+        </div>
       </div>
 
       {/* Main Chat Area */}
