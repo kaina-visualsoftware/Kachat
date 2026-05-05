@@ -5,7 +5,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   realtime: {
-    logger: (kind, msg, data) => console.log(`[Realtime] ${kind}: ${msg}`, data),
+    logger: import.meta.env.DEV ? (kind, msg, data) => console.log(`[Realtime] ${kind}: ${msg}`, data) : false,
     params: {
       eventsPerSecond: 10
     }

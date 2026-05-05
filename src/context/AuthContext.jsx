@@ -331,6 +331,30 @@ export function AuthProvider({ children }) {
     return { error };
   };
 
+  const deleteGroup = async (groupId) => {
+    if (!user) return { error: new Error("No user") };
+    
+    // Check if current user is admin of this group
+    const { data: memberCheck } = await supabase
+      .from("group_members")
+      .select("role")
+      .eq("group_id", groupId)
+      .eq("user_id", user.id)
+      .single();
+    
+    if (!memberCheck || memberCheck.role !== 'admin') {
+      return { error: new Error("Only admins can delete groups") };
+    }
+    
+    // Delete group (cascades to members and messages)
+    const { error } = await supabase
+      .from("groups")
+      .delete()
+      .eq("id", groupId);
+    
+    return { error };
+  };
+
   const getGroupMessages = async (groupId, limit = 50) => {
     const { data: messages, error } = await supabase
       .from("group_messages")
@@ -390,6 +414,7 @@ export function AuthProvider({ children }) {
         addGroupMember,
         removeGroupMember,
         leaveGroup,
+        deleteGroup,
         getGroupMessages,
         sendGroupMessage
       }}
