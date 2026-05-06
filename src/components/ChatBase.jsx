@@ -278,7 +278,7 @@ messages.map((message, index) => {
                         setPreviewSql
                       })}
                     </div>
-                    {isLastInGroup && (
+                    {(isLastInGroup || isGroupChat) && (
                       <div style={{
                         fontSize: 10,
                         color: isMe ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.5)',
