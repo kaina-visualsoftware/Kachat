@@ -1,5 +1,5 @@
 import { parseFileMessage, renderTextWithLinks } from '../utils/linkDetector.jsx'
-import { FileText, FileSpreadsheet, FileJson, FileCode } from 'lucide-react'
+import { FileText, FileSpreadsheet, FileJson, FileCode, FileArchive, Terminal } from 'lucide-react'
 import { theme, fileColors } from '../theme'
 
 export function renderMessageContent(content, isMe, sender, {
@@ -12,7 +12,9 @@ export function renderMessageContent(content, isMe, sender, {
   setPreviewPython,
   setPreviewOfx,
   setPreviewXml,
-  setPreviewSql
+  setPreviewSql,
+  setPreviewJsonc,
+  setPreviewArchive
 }) {
   // System messages
   if (content.startsWith('📋') || content.startsWith('🕐') || content.startsWith('📅') || 
@@ -406,6 +408,67 @@ export function renderMessageContent(content, isMe, sender, {
             <div>
               <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
               <div style={{ fontSize: 11, opacity: 0.8 }}>{(fileSize / 1024).toFixed(1)} KB - Apresentação ODP</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // JSONC (JSON with Comments)
+    if (fileName.endsWith('.jsonc') || fileName.endsWith('.json5') || fileType === 'application/jsonc') {
+      const colors = { bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.4)', icon: '#F59E0B', text: '#F59E0B' }
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewJsonc?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileJson size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>{(fileSize / 1024).toFixed(1)} KB - JSON com comentários</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Archive files (ZIP, RAR, 7Z)
+    if (fileName.endsWith('.zip') || fileName.endsWith('.rar') || fileName.endsWith('.7z') || 
+        fileName.endsWith('.tar') || fileName.endsWith('.gz') || fileType?.includes('zip') || fileType?.includes('compressed')) {
+      const colors = { bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.4)', icon: '#3B82F6', text: '#3B82F6' }
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewArchive?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileArchive size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>{(fileSize / 1024).toFixed(1)} KB - Arquivo compactado</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // BAT/CMD scripts
+    if (fileName.endsWith('.bat') || fileName.endsWith('.cmd') || fileType === 'application/x-bat') {
+      const colors = { bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.4)', icon: '#8B5CF6', text: '#8B5CF6' }
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewArchive?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <Terminal size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Script Batch</div>
             </div>
           </div>
         </div>

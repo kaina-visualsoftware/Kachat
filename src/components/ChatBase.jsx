@@ -66,6 +66,8 @@ export function ChatBase({
   previewOfx, setPreviewOfx,
   previewXml, setPreviewXml,
   previewSql, setPreviewSql,
+  previewJsonc, setPreviewJsonc,
+  previewArchive, setPreviewArchive,
   
   // Modais extras (render prop)
   renderExtraModals,
@@ -275,7 +277,9 @@ messages.map((message, index) => {
                         setPreviewPython,
                         setPreviewOfx,
                         setPreviewXml,
-                        setPreviewSql
+                        setPreviewSql,
+                        setPreviewJsonc,
+                        setPreviewArchive
                       })}
                     </div>
                     {(isLastInGroup || isGroupChat) && (
@@ -837,6 +841,10 @@ messages.map((message, index) => {
         setPreviewXml={setPreviewXml}
         previewSql={previewSql}
         setPreviewSql={setPreviewSql}
+        previewJsonc={previewJsonc}
+        setPreviewJsonc={setPreviewJsonc}
+        previewArchive={previewArchive}
+        setPreviewArchive={setPreviewArchive}
       />
 
       {/* Extra Modals */}

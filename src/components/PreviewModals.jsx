@@ -3,176 +3,9 @@ import { PythonPreviewModal } from './PythonPreviewModal'
 import { OfxPreviewModal } from './OfxPreviewModal'
 import { XmlPreviewModal } from './XmlPreviewModal'
 import { SqlPreviewModal } from './SqlPreviewModal'
-
-export function CsvPreviewModal({ data, onClose }) {
-  const [csvData, setCsvData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  useEffect(() => {
-    if (!data?.url) return
-    
-    fetch(data.url)
-      .then(res => res.text())
-      .then(text => {
-        const lines = text.split('\n').filter(line => line.trim())
-        const delimiter = lines[0].includes('\t') ? '\t' : ','
-        const parsed = lines.map(line => {
-          const cells = []
-          let current = ''
-          let inQuotes = false
-          
-          for (let i = 0; i < line.length; i++) {
-            const char = line[i]
-            if (char === '"') {
-              inQuotes = !inQuotes
-            } else if (char === delimiter && !inQuotes) {
-              cells.push(current.trim())
-              current = ''
-            } else {
-              current += char
-            }
-          }
-          cells.push(current.trim())
-          return cells
-        })
-        setCsvData(parsed)
-        setLoading(false)
-      })
-      .catch(err => {
-        setError('Erro ao carregar CSV')
-        setLoading(false)
-      })
-  }, [data?.url])
-
-  return (
-    <div 
-      onClick={onClose}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.95)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        cursor: 'pointer',
-        padding: 40
-      }}
-    >
-      <div 
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '90vw',
-          height: '90vh',
-          background: '#18181B',
-          borderRadius: 12,
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          border: '1px solid rgba(63, 63, 70, 0.5)'
-        }}
-      >
-        <div style={{
-          padding: '16px 20px',
-          borderBottom: '1px solid rgba(63, 63, 70, 0.5)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
-          <div style={{
-            fontSize: 16,
-            fontWeight: 600,
-            color: '#FAFAFA'
-          }}>
-            {data?.fileName || 'CSV Preview'}
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              color: 'white',
-              fontSize: 18,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            ×
-          </button>
-        </div>
-        
-        <div style={{
-          flex: 1,
-          overflow: 'auto',
-          padding: 16
-        }}>
-          {loading && (
-            <div style={{ textAlign: 'center', padding: 40, color: '#71717A' }}>
-              Carregando CSV...
-            </div>
-          )}
-          
-          {error && (
-            <div style={{ textAlign: 'center', padding: 40, color: '#EF4444' }}>
-              {error}
-            </div>
-          )}
-          
-          {csvData && csvData.length > 0 && (
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: 13,
-              color: '#FAFAFA'
-            }}>
-              <thead>
-                <tr>
-                  {csvData[0].map((cell, i) => (
-                    <th key={i} style={{
-                      padding: '10px 12px',
-                      borderBottom: '2px solid rgba(139, 92, 246, 0.3)',
-                      textAlign: 'left',
-                      fontWeight: 600,
-                      color: '#A78BFA',
-                      background: 'rgba(139, 92, 246, 0.1)',
-                      position: 'sticky',
-                      top: 0
-                    }}>
-                      {cell}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {csvData.slice(1).map((row, rowIndex) => (
-                  <tr key={rowIndex}>
-                    {row.map((cell, cellIndex) => (
-                      <td key={cellIndex} style={{
-                        padding: '8px 12px',
-                        borderBottom: '1px solid rgba(63, 63, 70, 0.5)'
-                      }}>
-                        {cell}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
+import { JsoncPreviewModal } from './JsoncPreviewModal'
+import { CsvPreviewModal } from './CsvPreviewModal'
+import { ArchivePreviewModal } from './ArchivePreviewModal'
 
 export function ImagePreviewModal({ src, onClose }) {
   if (!src) return null
@@ -685,7 +518,11 @@ export function PreviewModals({
   previewXml,
   setPreviewXml,
   previewSql,
-  setPreviewSql
+  setPreviewSql,
+  previewJsonc,
+  setPreviewJsonc,
+  previewArchive,
+  setPreviewArchive
 }) {
   return (
     <>
@@ -763,6 +600,20 @@ export function PreviewModals({
         <SqlPreviewModal 
           data={previewSql} 
           onClose={() => setPreviewSql(null)} 
+        />
+      )}
+      
+      {previewJsonc && (
+        <JsoncPreviewModal 
+          data={previewJsonc} 
+          onClose={() => setPreviewJsonc(null)} 
+        />
+      )}
+      
+      {previewArchive && (
+        <ArchivePreviewModal 
+          data={previewArchive} 
+          onClose={() => setPreviewArchive(null)} 
         />
       )}
     </>
