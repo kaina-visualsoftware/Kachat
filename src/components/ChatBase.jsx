@@ -177,9 +177,10 @@ messages.map((message, index) => {
             // Check consecutive messages (WhatsApp style)
             const prevMessage = messages[index - 1]
             const nextMessage = messages[index + 1]
-            const isConsecutive = prevMessage && prevMessage.sender_id === message.sender_id
+            const timeDiff = prevMessage ? new Date(message.created_at) - new Date(prevMessage.created_at) : 0
+            const isConsecutive = prevMessage && prevMessage.sender_id === message.sender_id && timeDiff <= 60 * 1000
             const isLastInGroup = !nextMessage || nextMessage.sender_id !== message.sender_id || 
-              (new Date(nextMessage.created_at) - new Date(message.created_at) > 5 * 60 * 1000)
+              (new Date(nextMessage.created_at) - new Date(message.created_at) > 60 * 1000)
             const isFirstInGroup = !isConsecutive
             
             // Avatar color based on user
