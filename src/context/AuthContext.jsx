@@ -355,6 +355,83 @@ export function AuthProvider({ children }) {
     return { error };
   };
 
+  const updateGroup = async (groupId, updates) => {
+    if (!user) return { error: new Error("No user") };
+    
+    // Check if current user is admin of this group
+    const { data: memberCheck } = await supabase
+      .from("group_members")
+      .select("role")
+      .eq("group_id", groupId)
+      .eq("user_id", user.id)
+      .single();
+    
+    if (!memberCheck || memberCheck.role !== 'admin') {
+      return { error: new Error("Only admins can update groups") };
+    }
+    
+    const { data, error } = await supabase
+      .from("groups")
+      .update(updates)
+      .eq("id", groupId)
+      .select()
+      .single();
+    
+    return { data, error };
+  };
+
+  const getGroupMedia = async (groupId) => {
+    const { data: messages, error } = await supabase
+      .from("group_messages")
+      .select("id, content, created_at, sender_id, attachments")
+      .eq("group_id", groupId)
+      .order("created_at", { ascending: false });
+    
+    if (error || !messages) return { data: [], error };
+    
+    // Extract media from messages
+    const allMedia = [];
+    messages.forEach(msg => {
+      if (msg.attachments && Array.isArray(msg.attachments)) {
+        msg.attachments.forEach(file => {
+          allMedia.push({
+            ...file,
+            messageId: msg.id,
+            createdAt: msg.created_at
+          });
+        });
+      }
+    });
+    
+    // Sort by date descending
+    allMedia.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    return { data: allMedia, error: null };
+  };
+
+  const clearGroupMessages = async (groupId) => {
+    if (!user) return { error: new Error("No user") };
+    
+    // Check if current user is admin of this group
+    const { data: memberCheck } = await supabase
+      .from("group_members")
+      .select("role")
+      .eq("group_id", groupId)
+      .eq("user_id", user.id)
+      .single();
+    
+    if (!memberCheck || memberCheck.role !== 'admin') {
+      return { error: new Error("Only admins can clear messages") };
+    }
+    
+    const { error } = await supabase
+      .from("group_messages")
+      .delete()
+      .eq("group_id", groupId);
+    
+    return { error };
+  };
+
   const getGroupMessages = async (groupId, limit = 50) => {
     const { data: messages, error } = await supabase
       .from("group_messages")
@@ -415,6 +492,9 @@ export function AuthProvider({ children }) {
         removeGroupMember,
         leaveGroup,
         deleteGroup,
+        updateGroup,
+        getGroupMedia,
+        clearGroupMessages,
         getGroupMessages,
         sendGroupMessage
       }}

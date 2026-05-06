@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Users, Settings, UserPlus, LogOut } from 'lucide-react'
+import { ArrowLeft, Users, Settings, UserPlus, LogOut, Image, Edit3, Trash2 } from 'lucide-react'
 import AddMembersModal from './AddMembersModal'
 import MembersModal from './MembersModal'
+import EditGroupModal from './EditGroupModal'
+import MediaGalleryModal from './MediaGalleryModal'
 import { Avatar } from '../components/Avatar'
 import { useChatLogic } from '../hooks/useChatLogic'
 import { ChatBase } from '../components/ChatBase'
@@ -12,14 +14,17 @@ import { ChatBase } from '../components/ChatBase'
 export default function ChatGroup() {
   const { groupId } = useParams()
   const navigate = useNavigate()
-  const { user, profile, uploadChatFiles, getGroupMessages, sendGroupMessage, getGroupMembers, leaveGroup, loading: authLoading } = useAuth()
+  const { user, profile, uploadChatFiles, getGroupMessages, sendGroupMessage, getGroupMembers, leaveGroup, clearGroupMessages, loading: authLoading } = useAuth()
   const [groupName, setGroupName] = useState('')
+  const [groupDescription, setGroupDescription] = useState('')
   const [groupAvatarUrl, setGroupAvatarUrl] = useState(null)
   const [members, setMembers] = useState([])
   const [isAdmin, setIsAdmin] = useState(false)
   const [showAddMembersModal, setShowAddMembersModal] = useState(false)
   const [showMembersModal, setShowMembersModal] = useState(false)
   const [showGroupMenu, setShowGroupMenu] = useState(false)
+  const [showEditGroupModal, setShowEditGroupModal] = useState(false)
+  const [showMediaGallery, setShowMediaGallery] = useState(false)
 
   const chatLogic = useChatLogic({
     chatType: 'group',
@@ -66,13 +71,14 @@ export default function ChatGroup() {
     // Load group info
     const loadGroupInfo = async () => {
       const { data } = await supabase
-        .from('chat_groups')
-        .select('name, avatar_url')
+        .from('groups')
+        .select('name, description, avatar_url')
         .eq('id', groupId)
         .single()
       
       if (data) {
         setGroupName(data.name)
+        setGroupDescription(data.description || '')
         setGroupAvatarUrl(data.avatar_url)
       }
     }
@@ -144,9 +150,15 @@ export default function ChatGroup() {
             <div style={{ color: '#FAFAFA', fontWeight: 600, fontSize: 16 }}>
               {groupName || 'Grupo'}
             </div>
-            <div style={{ color: '#71717A', fontSize: 12 }}>
-              {members.length} membro{members.length !== 1 ? 's' : ''}
-            </div>
+            {groupDescription ? (
+              <div style={{ color: '#71717A', fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {groupDescription}
+              </div>
+            ) : (
+              <div style={{ color: '#71717A', fontSize: 12 }}>
+                {members.length} membro{members.length !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
           
           <button
@@ -224,7 +236,89 @@ export default function ChatGroup() {
                 <Users size={18} />
                 Ver membros
               </button>
-              
+
+              <button
+                onClick={() => {
+                  setShowGroupMenu(false)
+                  setShowMediaGallery(true)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: '100%',
+                  padding: '10px 12px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#FAFAFA',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  borderRadius: 6
+                }}
+                onMouseOver={(e) => e.target.style.background = 'rgba(139, 92, 246, 0.1)'}
+                onMouseOut={(e) => e.target.style.background = 'transparent'}
+              >
+                <Image size={18} />
+                Mídias e arquivos
+              </button>
+
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowGroupMenu(false)
+                      setShowEditGroupModal(true)
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      padding: '10px 12px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#FAFAFA',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      borderRadius: 6
+                    }}
+                    onMouseOver={(e) => e.target.style.background = 'rgba(139, 92, 246, 0.1)'}
+                    onMouseOut={(e) => e.target.style.background = 'transparent'}
+                  >
+                    <Edit3 size={18} />
+                    Editar grupo
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      setShowGroupMenu(false)
+                      if (confirm('Tem certeza que deseja limpar todas as mensagens do grupo? Esta ação não pode ser desfeita.')) {
+                        await clearGroupMessages(groupId)
+                        window.location.reload()
+                      }
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      padding: '10px 12px',
+                      background: 'none',
+                      border: 'none',
+                      color: '#EF4444',
+                      cursor: 'pointer',
+                      fontSize: 14,
+                      borderRadius: 6
+                    }}
+                    onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
+                    onMouseOut={(e) => e.target.style.background = 'transparent'}
+                  >
+                    <Trash2 size={18} />
+                    Limpar conversa
+                  </button>
+                </>
+              )}
+
               <button
                 onClick={async () => {
                   if (confirm('Sair do grupo?')) {
@@ -290,6 +384,22 @@ export default function ChatGroup() {
                   if (data) setMembers(data)
                 })
               }}
+            />
+          )}
+          {showEditGroupModal && (
+            <EditGroupModal
+              group={{ id: groupId, name: groupName, description: groupDescription, avatar_url: groupAvatarUrl }}
+              onClose={() => setShowEditGroupModal(false)}
+              onSuccess={() => {
+                loadGroupInfo()
+              }}
+            />
+          )}
+          {showMediaGallery && (
+            <MediaGalleryModal
+              groupId={groupId}
+              groupName={groupName}
+              onClose={() => setShowMediaGallery(false)}
             />
           )}
         </>
