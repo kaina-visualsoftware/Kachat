@@ -15,6 +15,7 @@ const languageConfig = {
   swift: { name: 'Swift', color: '#FA7343', extensions: ['.swift'] },
   kotlin: { name: 'Kotlin', color: '#7F52FF', extensions: ['.kt', '.kts'] },
   shell: { name: 'Shell', color: '#4EAA25', extensions: ['.sh', '.bash', '.zsh'] },
+  batch: { name: 'Batch', color: '#4EAA25', extensions: ['.bat', '.cmd'] },
   yaml: { name: 'YAML', color: '#CB171E', extensions: ['.yml', '.yaml'] },
   ini: { name: 'Config', color: '#6B6B6B', extensions: ['.ini', '.conf', '.cfg', '.config'] },
   git: { name: 'Git', color: '#F05032', extensions: ['.gitignore', '.gitattributes'] },
@@ -50,6 +51,7 @@ const keywords = {
   go: ['package', 'import', 'func', 'var', 'const', 'type', 'struct', 'interface', 'map', 'chan', 'return', 'if', 'else', 'for', 'range', 'switch', 'case', 'default', 'break', 'continue', 'goto', 'fallthrough', 'defer', 'go', 'select', 'nil', 'true', 'false', 'iota', 'make', 'new', 'len', 'cap', 'append', 'copy', 'delete', 'panic', 'recover'],
   rust: ['fn', 'let', 'mut', 'const', 'static', 'struct', 'enum', 'trait', 'impl', 'pub', 'mod', 'use', 'crate', 'self', 'super', 'return', 'if', 'else', 'match', 'for', 'while', 'loop', 'break', 'continue', 'as', 'in', 'where', 'async', 'await', 'move', 'ref', 'type', 'dyn', 'unsafe', 'extern', 'true', 'false', 'Some', 'None', 'Ok', 'Err', 'self'],
   python: ['def', 'class', 'return', 'if', 'elif', 'else', 'for', 'while', 'break', 'continue', 'pass', 'try', 'except', 'finally', 'raise', 'import', 'from', 'as', 'with', 'yield', 'lambda', 'global', 'nonlocal', 'assert', 'del', 'in', 'is', 'not', 'and', 'or', 'True', 'False', 'None', 'async', 'await', 'self', 'print'],
+  batch: ['echo', 'set', 'if', 'else', 'not', 'exist', 'defined', 'goto', 'call', 'exit', 'rem', 'pause', 'cls', 'cd', 'dir', 'copy', 'move', 'del', 'mkdir', 'rmdir', 'type', 'find', 'start', 'tasklist', 'taskkill', 'ping', 'ipconfig', 'net', 'sc', 'reg', 'attrib', 'format', 'chkdsk', 'cls', 'title', 'prompt', 'setlocal', 'endlocal', 'enabledelayedexpansion', 'for', 'in', 'do', 'goto', 'shift', 'errorlevel', 'nul', 'comspec', 'processor', 'random', 'time', 'date', 'ver', 'vol', 'break', 'off', 'on'],
 }
 
 const highlightCode = (code, language) => {

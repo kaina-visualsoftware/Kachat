@@ -462,7 +462,7 @@ export function renderMessageContent(content, isMe, sender, {
     if (fileName.endsWith('.bat') || fileName.endsWith('.cmd') || fileType === 'application/x-bat') {
       const colors = { bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.4)', icon: '#8B5CF6', text: '#8B5CF6' }
       return (
-        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); e.preventDefault(); setPreviewCode?.({ url, fileName, fileSize }) }}>
           <div style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             padding: '12px 16px', background: colors.bg, 
@@ -482,7 +482,7 @@ export function renderMessageContent(content, isMe, sender, {
     if (fileName.toLowerCase().endsWith('.md') || fileName.toLowerCase().endsWith('.markdown') || fileType === 'text/markdown') {
       const colors = fileColors.md
       return (
-        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewMd?.({ url, fileName, fileSize })}>
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); e.preventDefault(); setPreviewMd?.({ url, fileName, fileSize }) }}>
           <div style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             padding: '12px 16px', background: colors.bg, 
