@@ -435,38 +435,48 @@ export function AuthProvider({ children }) {
     
     console.log("clearGroupMessages - user.id:", user.id, "groupId:", groupId);
     
-    // Check if current user is admin of this group
-    const { data: memberCheck } = await supabase
-      .from("group_members")
-      .select("role, user_id")
-      .eq("group_id", groupId)
-      .eq("user_id", user.id)
-      .single();
-    
-    console.log("memberCheck:", memberCheck);
-    
-    if (!memberCheck) {
-      return { error: new Error("You are not a member of this group") };
+    try {
+      // Check if current user is admin of this group
+      const { data: memberCheck, error: memberError } = await supabase
+        .from("group_members")
+        .select("role, user_id")
+        .eq("group_id", groupId)
+        .eq("user_id", user.id)
+        .single();
+      
+      console.log("memberCheck:", memberCheck, "memberError:", memberError);
+      
+      // Handle case where user is not a member
+      if (memberError && memberError.code === 'PGRST116') {
+        return { error: new Error("You are not a member of this group") };
+      }
+      
+      if (!memberCheck) {
+        return { error: new Error("You are not a member of this group") };
+      }
+      
+      if (memberCheck.role !== 'admin') {
+        return { error: new Error("Only admins can clear messages") };
+      }
+      
+      // Delete all messages in the group
+      console.log("Deleting messages for group:", groupId);
+      const { error: deleteError } = await supabase
+        .from("group_messages")
+        .delete()
+        .eq("group_id", groupId);
+      
+      if (deleteError) {
+        console.error("Error clearing messages:", deleteError);
+        return { error: deleteError };
+      }
+      
+      console.log("Messages cleared successfully");
+      return { error: null };
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      return { error: err };
     }
-    
-    if (memberCheck.role !== 'admin') {
-      return { error: new Error("Only admins can clear messages") };
-    }
-    
-    // Delete all messages in the group
-    console.log("Deleting messages for group:", groupId);
-    const { error: deleteError } = await supabase
-      .from("group_messages")
-      .delete()
-      .eq("group_id", groupId);
-    
-    if (deleteError) {
-      console.error("Error clearing messages:", deleteError);
-      return { error: deleteError };
-    }
-    
-    console.log("Messages cleared successfully");
-    return { error: null };
   };
 
   const getGroupMessages = async (groupId, limit = 50) => {
