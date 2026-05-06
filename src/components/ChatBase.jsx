@@ -174,6 +174,14 @@ messages.map((message, index) => {
             const senderAvatar = profileFromMap?.avatar_url || sender?.avatar_url
             const senderUsername = profileFromMap?.username || sender?.username
             
+            // Check consecutive messages (WhatsApp style)
+            const prevMessage = messages[index - 1]
+            const nextMessage = messages[index + 1]
+            const isConsecutive = prevMessage && prevMessage.sender_id === message.sender_id
+            const isLastInGroup = !nextMessage || nextMessage.sender_id !== message.sender_id || 
+              (new Date(nextMessage.created_at) - new Date(message.created_at) > 5 * 60 * 1000)
+            const isFirstInGroup = !isConsecutive
+            
             // Avatar color based on user
             const getAvatarGradient = (userId) => {
               const hash = String(userId).split('').reduce((a, b) => a + b.charCodeAt(0), 0)
@@ -198,16 +206,19 @@ messages.map((message, index) => {
                 marginBottom: 16,
                 gap: 10
               }}>
-                {/* Avatar - mostrar para todos */}
-                <Avatar
-                  url={isMe ? currentUserProfile?.avatar_url : senderAvatar}
-                  initials={isMe 
-                    ? currentUserProfile?.username?.charAt(0).toUpperCase()
-                    : senderUsername?.charAt(0).toUpperCase()
-                  }
-                  gradient={!isMe ? `linear-gradient(135deg, ${avatarColors[0]}, ${avatarColors[1]})` : undefined}
-                  size={36}
-                />
+                {/* Avatar - mostrar só na primeira mensagem do grupo */}
+                {isFirstInGroup && (
+                  <Avatar
+                    url={isMe ? currentUserProfile?.avatar_url : senderAvatar}
+                    initials={isMe 
+                      ? currentUserProfile?.username?.charAt(0).toUpperCase()
+                      : senderUsername?.charAt(0).toUpperCase()
+                    }
+                    gradient={!isMe ? `linear-gradient(135deg, ${avatarColors[0]}, ${avatarColors[1]})` : undefined}
+                    size={36}
+                  />
+                )}
+                {!isFirstInGroup && <div style={{ width: 36 }} />}
                 
                 <div style={{
                     maxWidth: '85%',
@@ -267,16 +278,18 @@ messages.map((message, index) => {
                     </div>
                   </div>
                   
-                  {/* Timestamp */}
-                  <div style={{
-                    fontSize: 11,
-                    color: '#FFFFFF',
-                    marginTop: 6,
-                    marginLeft: 4,
-                    marginRight: 4
-                  }}>
-                    {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+                  {/* Timestamp - só na última mensagem do grupo */}
+                  {isLastInGroup && (
+                    <div style={{
+                      fontSize: 11,
+                      color: '#FFFFFF',
+                      marginTop: 6,
+                      marginLeft: 4,
+                      marginRight: 4
+                    }}>
+                      {new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
+                    </div>
+                  )}
                 </div>
               </div>
             )
