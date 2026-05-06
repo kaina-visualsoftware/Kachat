@@ -129,13 +129,16 @@ export function CsvPreviewModal({ data, onClose }) {
       ? rows.filter(row => row.some(cell => cell.toLowerCase().includes(searchTerm.toLowerCase())))
       : rows
     
+    const currentDelimiter = delimiterRef.current
+    
     return { 
       headers, 
       rows: filteredRows, 
       totalRows: rows.length,
-      filteredRows: filteredRows.length
+      filteredRows: filteredRows.length,
+      delimiter: currentDelimiter
     }
-  }, [content, delimiter, sortColumn, sortDirection, searchTerm])
+  }, [content, sortColumn, sortDirection, searchTerm])
 
   const handleSort = (colIndex) => {
     if (sortColumn === colIndex) {
