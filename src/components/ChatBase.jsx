@@ -262,7 +262,8 @@ messages.map((message, index) => {
                     <div style={{
                       color: theme.text,
                       fontSize: 14,
-                      lineHeight: 1.5
+                      lineHeight: 1.5,
+                      marginBottom: isLastInGroup ? 4 : 0
                     }}>
                       {renderMessageContent(message.content, isMe, sender, {
                         setPreviewImage,
@@ -277,25 +278,22 @@ messages.map((message, index) => {
                         setPreviewSql
                       })}
                     </div>
+                    {isLastInGroup && (
+                      <div style={{
+                        fontSize: 10,
+                        color: isMe ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.5)',
+                        textAlign: 'right',
+                        marginTop: 2
+                      }}>
+                        {(() => {
+                          const date = new Date(message.created_at)
+                          const offset = -3 * 60
+                          const adjusted = new Date(date.getTime() + offset * 60 * 1000)
+                          return adjusted.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                        })()}
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Timestamp - só na última mensagem do grupo */}
-                  {isLastInGroup && (
-                    <div style={{
-                      fontSize: 11,
-                      color: '#FFFFFF',
-                      marginTop: 6,
-                      marginLeft: 4,
-                      marginRight: 4
-                    }}>
-                      {(() => {
-                        const date = new Date(message.created_at)
-                        const offset = -3 * 60 // Brazil UTC-3
-                        const adjusted = new Date(date.getTime() + offset * 60 * 1000)
-                        return adjusted.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                      })()}
-                    </div>
-                  )}
                 </div>
               </div>
             )
