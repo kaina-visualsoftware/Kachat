@@ -288,7 +288,12 @@ messages.map((message, index) => {
                       marginLeft: 4,
                       marginRight: 4
                     }}>
-                      {new Date(message.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}
+                      {(() => {
+                        const date = new Date(message.created_at)
+                        const offset = -3 * 60 // Brazil UTC-3
+                        const adjusted = new Date(date.getTime() + offset * 60 * 1000)
+                        return adjusted.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                      })()}
                     </div>
                   )}
                 </div>
