@@ -1,5 +1,46 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { X, Copy, Download, Search, Download as DownloadIcon, FileSpreadsheet, ArrowUpDown } from 'lucide-react'
+
+const detectDelimiter = (text) => {
+  const firstLines = text.split('\n').slice(0, 5).filter(l => l.trim())
+  if (firstLines.length === 0) return ','
+  
+  const delimiters = [
+    { char: ';', name: 'semicolon' },
+    { char: ',', name: 'comma' },
+    { char: '\t', name: 'tab' },
+    { char: '|', name: 'pipe' }
+  ]
+  
+  let bestDelimiter = ','
+  let maxScore = 0
+  
+  delimiters.forEach(({ char, name }) => {
+    let score = 0
+    let consistent = true
+    let prevCount = 0
+    
+    firstLines.forEach(line => {
+      const count = (line.match(new RegExp(char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length
+      
+      if (firstLines.indexOf(line) > 0 && prevCount !== 0 && count !== prevCount) {
+        consistent = false
+      }
+      score += count
+      prevCount = count
+    })
+    
+    // Prefer consistent delimiters with higher counts
+    const finalScore = consistent ? score * 2 : score
+    
+    if (finalScore > maxScore) {
+      maxScore = finalScore
+      bestDelimiter = char
+    }
+  })
+  
+  return bestDelimiter
+}
 
 export function CsvPreviewModal({ data, onClose }) {
   const [content, setContent] = useState('')
@@ -8,7 +49,7 @@ export function CsvPreviewModal({ data, onClose }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState(null)
   const [sortDirection, setSortDirection] = useState('asc')
-  const [delimiter, setDelimiter] = useState(',')
+  const delimiterRef = useRef(',')
 
   useEffect(() => {
     if (!data?.url) return
@@ -20,19 +61,7 @@ export function CsvPreviewModal({ data, onClose }) {
     fetch(data.url, { signal: controller.signal })
       .then(res => res.text())
       .then(text => {
-        // Detect delimiter
-        const firstLine = text.split('\n')[0]
-        const delimiters = [',', ';', '\t', '|']
-        let bestDelimiter = ','
-        let maxCount = 0
-        delimiters.forEach(d => {
-          const count = (firstLine.match(new RegExp(d, 'g')) || []).length
-          if (count > maxCount) {
-            maxCount = count
-            bestDelimiter = d
-          }
-        })
-        setDelimiter(bestDelimiter)
+        delimiterRef.current = detectDelimiter(text)
         setContent(text)
         setLoading(false)
       })
@@ -45,10 +74,12 @@ export function CsvPreviewModal({ data, onClose }) {
   }, [data?.url])
 
   const tableData = useMemo(() => {
-    if (!content) return { headers: [], rows: [], totalRows: 0 }
+    if (!content) return { headers: [], rows: [], totalRows: 0, delimiter: ',' }
+    
+    const delimiter = delimiterRef.current
     
     const lines = content.split('\n').filter(l => l.trim())
-    if (lines.length === 0) return { headers: [], rows: [], totalRows: 0 }
+    if (lines.length === 0) return { headers: [], rows: [], totalRows: 0, delimiter }
     
     const parseRow = (line) => {
       const result = []
@@ -123,7 +154,8 @@ export function CsvPreviewModal({ data, onClose }) {
   }
 
   const downloadFiltered = () => {
-    const csv = [tableData.headers.join(delimiter), ...tableData.rows.map(r => r.join(delimiter))].join('\n')
+    const currentDelimiter = tableData.delimiter || ','
+    const csv = [tableData.headers.join(currentDelimiter), ...tableData.rows.map(r => r.join(currentDelimiter))].join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -180,6 +212,7 @@ export function CsvPreviewModal({ data, onClose }) {
               <div style={{ color: '#71717A', fontSize: 12 }}>
                 {tableData.headers.length} colunas • {tableData.totalRows} linhas
                 {searchTerm && ` • ${tableData.filteredRows} filtradas`}
+                • Delimitador: {tableData.delimiter === ';' ? ';' : tableData.delimiter === '\t' ? 'Tab' : tableData.delimiter === '|' ? '|' : ','}
                 {data?.fileSize ? ` • ${(data.fileSize / 1024).toFixed(1)} KB` : ''}
               </div>
             </div>
