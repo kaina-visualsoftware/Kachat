@@ -67,6 +67,9 @@ export function ChatBase({
   previewXml, setPreviewXml,
   previewSql, setPreviewSql,
   previewJsonc, setPreviewJsonc,
+  previewJson, setPreviewJson,
+  previewMd, setPreviewMd,
+  previewCode, setPreviewCode,
   previewArchive, setPreviewArchive,
   
   // Modais extras (render prop)
@@ -279,6 +282,9 @@ messages.map((message, index) => {
                         setPreviewXml,
                         setPreviewSql,
                         setPreviewJsonc,
+                        setPreviewJson,
+                        setPreviewMd,
+                        setPreviewCode,
                         setPreviewArchive
                       })}
                     </div>
@@ -843,6 +849,12 @@ messages.map((message, index) => {
         setPreviewSql={setPreviewSql}
         previewJsonc={previewJsonc}
         setPreviewJsonc={setPreviewJsonc}
+        previewJson={previewJson}
+        setPreviewJson={setPreviewJson}
+        previewMd={previewMd}
+        setPreviewMd={setPreviewMd}
+        previewCode={previewCode}
+        setPreviewCode={setPreviewCode}
         previewArchive={previewArchive}
         setPreviewArchive={setPreviewArchive}
       />

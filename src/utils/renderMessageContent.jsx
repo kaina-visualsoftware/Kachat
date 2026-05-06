@@ -1,5 +1,5 @@
 import { parseFileMessage, renderTextWithLinks } from '../utils/linkDetector.jsx'
-import { FileText, FileSpreadsheet, FileJson, FileCode, FileArchive, Terminal } from 'lucide-react'
+import { FileText, FileSpreadsheet, FileJson, FileCode, FileArchive, Terminal, FileCode2, FileType } from 'lucide-react'
 import { theme, fileColors } from '../theme'
 
 export function renderMessageContent(content, isMe, sender, {
@@ -14,6 +14,9 @@ export function renderMessageContent(content, isMe, sender, {
   setPreviewXml,
   setPreviewSql,
   setPreviewJsonc,
+  setPreviewJson,
+  setPreviewMd,
+  setPreviewCode,
   setPreviewArchive
 }) {
   // System messages
@@ -469,6 +472,248 @@ export function renderMessageContent(content, isMe, sender, {
             <div>
               <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
               <div style={{ fontSize: 11, opacity: 0.8 }}>Script Batch</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Markdown (.md, .markdown)
+    if (fileName.toLowerCase().endsWith('.md') || fileName.toLowerCase().endsWith('.markdown') || fileType === 'text/markdown') {
+      const colors = fileColors.md
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewMd?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileText size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>{(fileSize / 1024).toFixed(1)} KB - Markdown</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // JavaScript (.js, .mjs, .cjs)
+    if (fileName.toLowerCase().endsWith('.js') || fileName.toLowerCase().endsWith('.mjs') || fileName.toLowerCase().endsWith('.cjs') || fileName.toLowerCase().endsWith('.jsx')) {
+      const colors = fileColors.js
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>JavaScript</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // TypeScript (.ts, .tsx)
+    if (fileName.toLowerCase().endsWith('.ts') || fileName.toLowerCase().endsWith('.tsx') || fileName.toLowerCase().endsWith('.mts') || fileName.toLowerCase().endsWith('.cts')) {
+      const colors = fileColors.ts
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>TypeScript</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // C / C++ (.c, .h, .cpp, .hpp, .cc, .cxx)
+    if (fileName.toLowerCase().endsWith('.c') || fileName.toLowerCase().endsWith('.h') || 
+        fileName.toLowerCase().endsWith('.cpp') || fileName.toLowerCase().endsWith('.hpp') ||
+        fileName.toLowerCase().endsWith('.cc') || fileName.toLowerCase().endsWith('.cxx')) {
+      const colors = fileName.toLowerCase().endsWith('.cpp') || fileName.toLowerCase().endsWith('.hpp') || fileName.toLowerCase().endsWith('.cxx') || fileName.toLowerCase().endsWith('.cc') ? fileColors.cpp : fileColors.c
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>{fileName.toLowerCase().endsWith('.cpp') || fileName.toLowerCase().endsWith('.hpp') || fileName.toLowerCase().endsWith('.cxx') || fileName.toLowerCase().endsWith('.cc') ? 'C++' : 'C'}</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Java (.java)
+    if (fileName.toLowerCase().endsWith('.java')) {
+      const colors = fileColors.java
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Java</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Go (.go)
+    if (fileName.toLowerCase().endsWith('.go')) {
+      const colors = fileColors.go
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Go</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Rust (.rs)
+    if (fileName.toLowerCase().endsWith('.rs')) {
+      const colors = fileColors.rust
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Rust</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Ruby (.rb)
+    if (fileName.toLowerCase().endsWith('.rb') || fileName.toLowerCase().endsWith('.erb')) {
+      const colors = fileColors.ruby
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Ruby</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // PHP (.php)
+    if (fileName.toLowerCase().endsWith('.php')) {
+      const colors = fileColors.php
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>PHP</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Shell scripts (.sh, .bash)
+    if (fileName.toLowerCase().endsWith('.sh') || fileName.toLowerCase().endsWith('.bash')) {
+      const colors = fileColors.shell
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <Terminal size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Shell Script</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // YAML (.yml, .yaml)
+    if (fileName.toLowerCase().endsWith('.yml') || fileName.toLowerCase().endsWith('.yaml')) {
+      const colors = fileColors.yaml
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>YAML</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // Git files (.gitignore, .gitattributes)
+    if (fileName.toLowerCase().startsWith('.git')) {
+      const colors = fileColors.git
+      return (
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewCode?.({ url, fileName, fileSize })}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: colors.bg, 
+            border: `2px solid ${colors.border}`, borderRadius: 12, color: theme.text
+          }}>
+            <FileCode2 size={18} color={colors.icon} />
+            <div>
+              <div style={{ fontWeight: 600, color: colors.text }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.8 }}>Git Config</div>
             </div>
           </div>
         </div>

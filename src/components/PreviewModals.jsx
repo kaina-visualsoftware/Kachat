@@ -6,6 +6,9 @@ import { SqlPreviewModal } from './SqlPreviewModal'
 import { JsoncPreviewModal } from './JsoncPreviewModal'
 import { CsvPreviewModal } from './CsvPreviewModal'
 import { ArchivePreviewModal } from './ArchivePreviewModal'
+import { CodePreviewModal } from './CodePreviewModal'
+import { MarkdownPreviewModal } from './MarkdownPreviewModal'
+import { EnhancedHtmlPreviewModal } from './HtmlPreviewModal'
 
 export function ImagePreviewModal({ src, onClose }) {
   if (!src) return null
@@ -521,6 +524,12 @@ export function PreviewModals({
   setPreviewSql,
   previewJsonc,
   setPreviewJsonc,
+  previewJson,
+  setPreviewJson,
+  previewMd,
+  setPreviewMd,
+  previewCode,
+  setPreviewCode,
   previewArchive,
   setPreviewArchive
 }) {
@@ -614,6 +623,27 @@ export function PreviewModals({
         <ArchivePreviewModal 
           data={previewArchive} 
           onClose={() => setPreviewArchive(null)} 
+        />
+      )}
+      
+      {previewJson && (
+        <JsoncPreviewModal 
+          data={previewJson} 
+          onClose={() => setPreviewJson(null)} 
+        />
+      )}
+      
+      {previewMd && (
+        <MarkdownPreviewModal 
+          data={previewMd} 
+          onClose={() => setPreviewMd(null)} 
+        />
+      )}
+      
+      {previewCode && (
+        <CodePreviewModal 
+          data={previewCode} 
+          onClose={() => setPreviewCode(null)} 
         />
       )}
     </>
