@@ -313,7 +313,9 @@ export function renderMessageContent(content, isMe, sender, {
     }
     
     // OFX (Open Financial Exchange)
-    if (fileName.endsWith('.ofx') || fileType === 'application/x-ofx' || fileType === 'text/x-ofx') {
+    const ofxTypes = ['application/x-ofx', 'application/x-ofx+xml', 'text/x-ofx', 'text/x-ofx+xml', 'application/vnd.intu.qbo', 'text/plain']
+    const isOfxFile = fileName.toLowerCase().endsWith('.ofx') || ofxTypes.includes(fileType?.toLowerCase())
+    if (isOfxFile) {
       const colors = fileColors.ofx
       return (
         <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewOfx?.({ url, fileName, fileSize })}>
