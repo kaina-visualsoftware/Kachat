@@ -564,8 +564,8 @@ export function PreviewModals({
       )}
       
       {previewHtml && (
-        <HtmlPreviewModal 
-          src={previewHtml} 
+        <EnhancedHtmlPreviewModal 
+          data={previewHtml} 
           onClose={() => setPreviewHtml(null)} 
         />
       )}

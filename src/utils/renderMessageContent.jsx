@@ -181,7 +181,7 @@ export function renderMessageContent(content, isMe, sender, {
     if (fileType === 'text/html' || fileName.endsWith('.html') || fileName.endsWith('.htm')) {
       const colors = fileColors.html
       return (
-        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewHtml?.(url)}>
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewHtml?.({ url, fileName, fileSize })}>
           <div style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             padding: '12px 16px', background: colors.bg, 
