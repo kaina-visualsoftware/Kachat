@@ -65,23 +65,23 @@ export default function ChatGroup() {
     isGroupChat: true
   })
 
+  // Function to reload group info (can be called from modals)
+  const refreshGroupInfo = async () => {
+    const { data } = await supabase
+      .from('groups')
+      .select('name, description, avatar_url')
+      .eq('id', groupId)
+      .single()
+    
+    if (data) {
+      setGroupName(data.name)
+      setGroupDescription(data.description || '')
+      setGroupAvatarUrl(data.avatar_url)
+    }
+  }
+
   useEffect(() => {
     if (!groupId || !user) return
-
-    // Load group info
-    const loadGroupInfo = async () => {
-      const { data } = await supabase
-        .from('groups')
-        .select('name, description, avatar_url')
-        .eq('id', groupId)
-        .single()
-      
-      if (data) {
-        setGroupName(data.name)
-        setGroupDescription(data.description || '')
-        setGroupAvatarUrl(data.avatar_url)
-      }
-    }
 
     // Load members
     const loadMembers = async () => {
@@ -93,7 +93,7 @@ export default function ChatGroup() {
       }
     }
 
-    loadGroupInfo()
+    refreshGroupInfo()
     loadMembers()
   }, [groupId, user])
 
@@ -395,7 +395,7 @@ export default function ChatGroup() {
               group={{ id: groupId, name: groupName, description: groupDescription, avatar_url: groupAvatarUrl }}
               onClose={() => setShowEditGroupModal(false)}
               onSuccess={() => {
-                loadGroupInfo()
+                refreshGroupInfo()
               }}
             />
           )}
