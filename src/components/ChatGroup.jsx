@@ -297,7 +297,10 @@ export default function ChatGroup() {
                         if (result.error) {
                           alert('Erro ao limpar mensagens: ' + result.error.message)
                         } else {
-                          window.location.reload()
+                          // Small delay to ensure delete is processed
+                          setTimeout(() => {
+                            window.location.reload()
+                          }, 500)
                         }
                       }
                     }}
