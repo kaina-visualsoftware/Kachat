@@ -79,15 +79,20 @@ export default function EditGroupModal({ group, onClose, onSuccess }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000
+      zIndex: 1000,
+      padding: 20,
+      boxSizing: 'border-box'
     }} onClick={onClose}>
       <div style={{
         background: '#18181B',
         borderRadius: 16,
-        width: '90%',
+        width: '100%',
         maxWidth: 400,
         padding: 24,
-        border: '1px solid #27272A'
+        border: '1px solid #27272A',
+        boxSizing: 'border-box',
+        maxHeight: '90vh',
+        overflowY: 'auto'
       }} onClick={e => e.stopPropagation()}>
         <div style={{
           display: 'flex',
@@ -163,13 +168,15 @@ export default function EditGroupModal({ group, onClose, onSuccess }) {
               onChange={e => setName(e.target.value)}
               style={{
                 width: '100%',
+                maxWidth: '100%',
                 padding: '12px 16px',
                 borderRadius: 8,
                 background: '#27272A',
                 border: '1px solid #3F3F46',
                 color: '#FAFAFA',
                 fontSize: 14,
-                outline: 'none'
+                outline: 'none',
+                boxSizing: 'border-box'
               }}
               placeholder="Nome do grupo"
             />
@@ -185,6 +192,7 @@ export default function EditGroupModal({ group, onClose, onSuccess }) {
               onChange={e => setDescription(e.target.value)}
               style={{
                 width: '100%',
+                maxWidth: '100%',
                 padding: '12px 16px',
                 borderRadius: 8,
                 background: '#27272A',
@@ -194,7 +202,8 @@ export default function EditGroupModal({ group, onClose, onSuccess }) {
                 outline: 'none',
                 resize: 'vertical',
                 minHeight: 80,
-                fontFamily: 'inherit'
+                fontFamily: 'inherit',
+                boxSizing: 'border-box'
               }}
               placeholder="Descrição do grupo..."
             />

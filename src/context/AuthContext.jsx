@@ -370,6 +370,7 @@ export function AuthProvider({ children }) {
       return { error: new Error("Only admins can update groups") };
     }
     
+    // Update the group
     const { data, error } = await supabase
       .from("groups")
       .update(updates)
@@ -377,29 +378,38 @@ export function AuthProvider({ children }) {
       .select()
       .single();
     
-    // Return success even if error is null (update succeeded)
-    return { data, error: null };
+    // Check if the update actually happened
+    if (data) {
+      return { data, error: null };
+    }
+    
+    // If no data returned but no explicit error, still return success
+    return { data: null, error: null };
   };
 
   const getGroupMedia = async (groupId) => {
     const { data: messages, error } = await supabase
       .from("group_messages")
-      .select("id, content, created_at, sender_id, attachments")
+      .select("id, content, created_at, sender_id")
       .eq("group_id", groupId)
       .order("created_at", { ascending: false });
     
     if (error || !messages) return { data: [], error };
     
-    // Extract media from messages
+    // Extract media from message content [file]url|name|type|size[/file]
     const allMedia = [];
+    const fileRegex = /\[file\]([^|]+)\|([^|]+)\|([^|]+)\|(\d+)\[\/file\]/g;
+    
     messages.forEach(msg => {
-      if (msg.attachments && Array.isArray(msg.attachments)) {
-        msg.attachments.forEach(file => {
-          allMedia.push({
-            ...file,
-            messageId: msg.id,
-            createdAt: msg.created_at
-          });
+      let match;
+      while ((match = fileRegex.exec(msg.content)) !== null) {
+        allMedia.push({
+          url: match[1],
+          fileName: match[2],
+          fileType: match[3],
+          fileSize: parseInt(match[4]),
+          messageId: msg.id,
+          createdAt: msg.created_at
         });
       }
     });
@@ -425,12 +435,18 @@ export function AuthProvider({ children }) {
       return { error: new Error("Only admins can clear messages") };
     }
     
-    const { error } = await supabase
+    // First delete all messages in the group
+    const { error: deleteError } = await supabase
       .from("group_messages")
       .delete()
       .eq("group_id", groupId);
     
-    return { error };
+    if (deleteError) {
+      console.error("Error clearing messages:", deleteError);
+      return { error: deleteError };
+    }
+    
+    return { error: null };
   };
 
   const getGroupMessages = async (groupId, limit = 50) => {
