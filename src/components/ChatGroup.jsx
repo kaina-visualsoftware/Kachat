@@ -293,8 +293,12 @@ export default function ChatGroup() {
                     onClick={async () => {
                       setShowGroupMenu(false)
                       if (confirm('Tem certeza que deseja limpar todas as mensagens do grupo? Esta ação não pode ser desfeita.')) {
-                        await clearGroupMessages(groupId)
-                        window.location.reload()
+                        const result = await clearGroupMessages(groupId)
+                        if (result.error) {
+                          alert('Erro ao limpar mensagens: ' + result.error.message)
+                        } else {
+                          window.location.reload()
+                        }
                       }
                     }}
                     style={{

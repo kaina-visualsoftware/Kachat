@@ -38,26 +38,28 @@ export default function EditGroupModal({ group, onClose, onSuccess }) {
 
       // Upload new avatar if changed
       if (avatarFile) {
-        const { data: files, error: uploadError } = await uploadChatFiles([avatarFile])
-        if (uploadError) {
-          setError('Erro ao上传ar foto')
+        const result = await uploadChatFiles([avatarFile])
+        if (result.error) {
+          console.error("Upload error:", result.error)
+          setError('Erro ao enviar foto: ' + result.error.message)
           setLoading(false)
           return
         }
-        if (files && files[0]) {
-          newAvatarUrl = files[0].url
+        if (result.data && result.data[0]) {
+          newAvatarUrl = result.data[0].url
         }
       }
 
       // Update group
-      const { error: updateError } = await updateGroup(group.id, {
+      const updateResult = await updateGroup(group.id, {
         name: name.trim(),
         description: description.trim(),
         avatar_url: newAvatarUrl
       })
 
-      if (updateError && updateError.message) {
-        setError('Erro ao atualizar grupo')
+      if (updateResult.error) {
+        console.error("Update group error:", updateResult.error)
+        setError('Erro ao atualizar grupo: ' + updateResult.error.message)
         setLoading(false)
         return
       }
@@ -65,6 +67,7 @@ export default function EditGroupModal({ group, onClose, onSuccess }) {
       onSuccess?.()
       onClose()
     } catch (err) {
+      console.error("EditGroupModal error:", err)
       setError('Erro ao atualizar grupo')
     }
 

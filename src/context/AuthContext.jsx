@@ -358,15 +358,23 @@ export function AuthProvider({ children }) {
   const updateGroup = async (groupId, updates) => {
     if (!user) return { error: new Error("No user") };
     
+    console.log("updateGroup - user.id:", user.id, "groupId:", groupId);
+    
     // Check if current user is admin of this group
     const { data: memberCheck } = await supabase
       .from("group_members")
-      .select("role")
+      .select("role, user_id")
       .eq("group_id", groupId)
       .eq("user_id", user.id)
       .single();
     
-    if (!memberCheck || memberCheck.role !== 'admin') {
+    console.log("updateGroup - memberCheck:", memberCheck);
+    
+    if (!memberCheck) {
+      return { error: new Error("You are not a member of this group") };
+    }
+    
+    if (memberCheck.role !== 'admin') {
       return { error: new Error("Only admins can update groups") };
     }
     
@@ -378,12 +386,14 @@ export function AuthProvider({ children }) {
       .select()
       .single();
     
+    console.log("updateGroup - result:", { data, error });
+    
     // Check if the update actually happened
     if (data) {
       return { data, error: null };
     }
     
-    // If no data returned but no explicit error, still return success
+    // If no explicit error, return success
     return { data: null, error: null };
   };
 
@@ -423,19 +433,28 @@ export function AuthProvider({ children }) {
   const clearGroupMessages = async (groupId) => {
     if (!user) return { error: new Error("No user") };
     
+    console.log("clearGroupMessages - user.id:", user.id, "groupId:", groupId);
+    
     // Check if current user is admin of this group
     const { data: memberCheck } = await supabase
       .from("group_members")
-      .select("role")
+      .select("role, user_id")
       .eq("group_id", groupId)
       .eq("user_id", user.id)
       .single();
     
-    if (!memberCheck || memberCheck.role !== 'admin') {
+    console.log("memberCheck:", memberCheck);
+    
+    if (!memberCheck) {
+      return { error: new Error("You are not a member of this group") };
+    }
+    
+    if (memberCheck.role !== 'admin') {
       return { error: new Error("Only admins can clear messages") };
     }
     
-    // First delete all messages in the group
+    // Delete all messages in the group
+    console.log("Deleting messages for group:", groupId);
     const { error: deleteError } = await supabase
       .from("group_messages")
       .delete()
@@ -446,6 +465,7 @@ export function AuthProvider({ children }) {
       return { error: deleteError };
     }
     
+    console.log("Messages cleared successfully");
     return { error: null };
   };
 
