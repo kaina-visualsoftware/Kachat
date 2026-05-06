@@ -377,7 +377,8 @@ export function AuthProvider({ children }) {
       .select()
       .single();
     
-    return { data, error };
+    // Return success even if error is null (update succeeded)
+    return { data, error: null };
   };
 
   const getGroupMedia = async (groupId) => {

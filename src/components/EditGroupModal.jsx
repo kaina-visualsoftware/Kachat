@@ -56,7 +56,7 @@ export default function EditGroupModal({ group, onClose, onSuccess }) {
         avatar_url: newAvatarUrl
       })
 
-      if (updateError) {
+      if (updateError && updateError.message) {
         setError('Erro ao atualizar grupo')
         setLoading(false)
         return
