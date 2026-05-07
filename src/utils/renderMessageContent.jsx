@@ -158,8 +158,8 @@ export function renderMessageContent(content, isMe, sender, {
       )
     }
     
-    // TXT/MD
-    if (fileType === 'text/plain' || fileType === 'text/markdown' || fileName.endsWith('.txt') || fileName.endsWith('.md')) {
+    // TXT (excluding .md which has its own handler)
+    if (fileType === 'text/plain' || fileName.endsWith('.txt')) {
       const colors = fileColors.txt
       return (
         <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewDoc?.({ url, fileName, fileType })}>
