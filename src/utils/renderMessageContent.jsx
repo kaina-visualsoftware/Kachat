@@ -1,4 +1,5 @@
 import { parseFileMessage, renderTextWithLinks } from '../utils/linkDetector.jsx'
+import { parseMarkdown, hasMarkdown } from '../utils/markdownParser.jsx'
 import { FileText, FileSpreadsheet, FileJson, FileCode, FileArchive, Terminal, FileCode2, FileType } from 'lucide-react'
 import { theme, fileColors } from '../theme'
 
@@ -733,6 +734,21 @@ export function renderMessageContent(content, isMe, sender, {
           <div style={{ fontSize: 11, opacity: 0.8, color: theme.text }}>{(fileSize / 1024).toFixed(1)} KB</div>
         </div>
       </div>
+    )
+  }
+  
+  // Check for markdown in text messages
+  if (hasMarkdown(content)) {
+    const markdownHtml = parseMarkdown(content, true)
+    return (
+      <span 
+        style={{ 
+          color: isMe ? '#FFFFFF' : theme.text,
+          lineHeight: 1.5,
+          wordBreak: 'break-word'
+        }}
+        dangerouslySetInnerHTML={{ __html: markdownHtml }}
+      />
     )
   }
   
