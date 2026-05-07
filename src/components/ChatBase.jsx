@@ -232,8 +232,8 @@ messages.map((message, index) => {
                     flexDirection: 'column',
                     alignItems: isMe ? 'flex-end' : 'flex-start'
                   }}>
-                  {/* Sender name in group */}
-                  {isGroupChat && !isMe && senderUsername && (
+                  {/* Sender name in group - only show on first message of a group */}
+                  {isGroupChat && !isMe && senderUsername && isFirstInGroup && (
                     <div style={{
                       fontSize: 12,
                       fontWeight: 600,
