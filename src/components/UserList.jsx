@@ -8,11 +8,13 @@ export default function UserList() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [lastMessages, setLastMessages] = useState({})
   const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
     loadUsers()
+    loadLastMessages()
   }, [user])
 
   const loadUsers = async () => {
@@ -21,12 +23,53 @@ export default function UserList() {
       .select('id, username, avatar_url')
       .neq('id', user.id)
     
-    // Filter out users without username (deleted users)
     const validUsers = data ? data.filter(u => u.username) : []
     
     if (!error && validUsers) setUsers(validUsers)
     setLoading(false)
   }
+
+  const loadLastMessages = async () => {
+    if (!user?.id) return
+    
+    const { data: messages } = await supabase
+      .from('direct_messages')
+      .select('sender_id, receiver_id, created_at')
+      .or(`receiver_id.eq.${user.id},sender_id.eq.${user.id}`)
+      .order('created_at', { ascending: false })
+    
+    if (!messages) return
+    
+    const lastByUser = {}
+    messages.forEach(msg => {
+      const otherUserId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id
+      if (!lastByUser[otherUserId] || new Date(msg.created_at) > new Date(lastByUser[otherUserId].created_at)) {
+        lastByUser[otherUserId] = msg
+      }
+    })
+    
+    setLastMessages(lastByUser)
+  }
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('userlist_messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'direct_messages'
+      }, (payload) => {
+        const msg = payload.new
+        if (msg.sender_id === user.id || msg.receiver_id === user.id) {
+          loadLastMessages()
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id])
 
   const startChat = (userId) => {
     navigate(`/chat/${userId}`)
@@ -224,15 +267,17 @@ export default function UserList() {
                 </div>
               </div>
 
-              {/* Status Indicator */}
-              <div style={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                background: '#10B981',
-                flexShrink: 0,
-                boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)'
-              }} />
+              {/* Status Indicator - green dot only if last message is from other user */}
+              {lastMessages[u.id] && lastMessages[u.id].sender_id !== user.id && (
+                <div style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: '#10B981',
+                  flexShrink: 0,
+                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)'
+                }} />
+              )}
             </div>
           ))
         )}

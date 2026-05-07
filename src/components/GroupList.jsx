@@ -8,12 +8,14 @@ export default function GroupList() {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [lastMessages, setLastMessages] = useState({})
   const { user, signOut, getGroups, profile } = useAuth()
   const navigate = useNavigate()
   const [showCreateModal, setShowCreateModal] = useState(false)
 
   useEffect(() => {
     loadGroups()
+    loadLastMessages()
   }, [user])
 
   const loadGroups = async () => {
@@ -21,6 +23,43 @@ export default function GroupList() {
     if (!error && data) setGroups(data)
     setLoading(false)
   }
+
+  const loadLastMessages = async () => {
+    if (!user?.id) return
+    
+    const { data: messages } = await supabase
+      .from('group_messages')
+      .select('group_id, sender_id, created_at')
+      .order('created_at', { ascending: false })
+    
+    if (!messages) return
+    
+    const lastByGroup = {}
+    messages.forEach(msg => {
+      if (!lastByGroup[msg.group_id] || new Date(msg.created_at) > new Date(lastByGroup[msg.group_id].created_at)) {
+        lastByGroup[msg.group_id] = msg
+      }
+    })
+    
+    setLastMessages(lastByGroup)
+  }
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('grouplist_messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'group_messages'
+      }, () => {
+        loadLastMessages()
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id])
 
   const openGroup = (groupId) => {
     navigate(`/group/${groupId}`)
@@ -251,15 +290,17 @@ export default function GroupList() {
                 </div>
               </div>
 
-              {/* Status Indicator */}
-              <div style={{
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                background: '#10B981',
-                flexShrink: 0,
-                boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)'
-              }} />
+              {/* Status Indicator - green dot only if last message is from other user */}
+              {lastMessages[g.id] && lastMessages[g.id].sender_id !== user.id && (
+                <div style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: '#10B981',
+                  flexShrink: 0,
+                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)'
+                }} />
+              )}
             </div>
           ))
         )}
