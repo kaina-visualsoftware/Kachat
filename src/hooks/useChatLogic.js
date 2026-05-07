@@ -454,6 +454,21 @@ export function useChatLogic({
   }
 
   const handleKeyDown = (e) => {
+    // Allow Shift+Enter for new line
+    if (e.key === 'Enter' && e.shiftKey) {
+      return // Let default behavior create new line
+    }
+    
+    // Enter without Shift sends message
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      e.stopPropagation()
+      if (input.trim()) {
+        handleSendMessage()
+      }
+      return false
+    }
+    
     if (showCommandList && filteredCommands.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()

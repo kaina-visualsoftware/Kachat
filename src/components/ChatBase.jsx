@@ -654,15 +654,15 @@ messages.map((message, index) => {
         )}
         
         {/* Input Row */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <input
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+          <textarea
             ref={inputRef}
-            type="text"
             className="chat-input"
             value={input}
             onChange={(e) => rest.setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isGroupChat ? 'Mensagem ou @menção...' : 'Mensagem...'}
+            rows={1}
             style={{
               flex: 1,
               padding: '12px 16px',
@@ -671,7 +671,12 @@ messages.map((message, index) => {
               background: theme.bgTertiary,
               color: '#FFFFFF',
               fontSize: 14,
-              outline: 'none'
+              outline: 'none',
+              resize: 'none',
+              maxHeight: 120,
+              minHeight: 44,
+              lineHeight: 1.4,
+              overflow: 'auto'
             }}
             onFocus={(e) => e.target.style.borderColor = theme.accent}
             onBlur={(e) => e.target.style.borderColor = 'rgba(63, 63, 70, 0.5)'}
