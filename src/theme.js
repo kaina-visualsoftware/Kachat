@@ -31,7 +31,7 @@ export const fileColors = {
   odt: { bg: 'rgba(52, 152, 219, 0.2)', border: '#3498DB', icon: '#3498DB', text: '#3498DB' },
   ods: { bg: 'rgba(46, 204, 113, 0.2)', border: '#2ECC71', icon: '#2ECC71', text: '#2ECC71' },
   odp: { bg: 'rgba(155, 89, 182, 0.2)', border: '#9B59B6', icon: '#9B59B6', text: '#9B59B6' },
-  md: { bg: 'rgba(8, 63, 161, 0.2)', border: '#083FA1', icon: '#083FA1', text: '#083FA1' },
+  md: { bg: 'rgba(139, 92, 246, 0.3)', border: '#A78BFA', icon: '#A78BFA', text: '#A78BFA' },
   js: { bg: 'rgba(247, 223, 30, 0.2)', border: '#F7DF1E', icon: '#F7DF1E', text: '#F7DF1E' },
   ts: { bg: 'rgba(49, 120, 198, 0.2)', border: '#3178C6', icon: '#3178C6', text: '#3178C6' },
   c: { bg: 'rgba(168, 185, 204, 0.2)', border: '#A8B9CC', icon: '#A8B9CC', text: '#A8B9CC' },
