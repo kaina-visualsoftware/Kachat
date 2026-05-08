@@ -118,11 +118,11 @@ function processUrls(text) {
 }
 
 export function parseFileMessage(content) {
-  const fileRegex = /\[file\](.*?)\|(.*?)\|(.*?)\|(\d+)\[\/file\]/;
+  const fileRegex = /\[file\](\S+)\|(.+?)\|(.+?)\|(\d+)\[\/file\]/;
   const match = content.match(fileRegex);
   
   if (!match) return null;
-  
+
   const [_, url, fileName, fileType, fileSize] = match;
     
   return {

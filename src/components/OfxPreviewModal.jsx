@@ -257,8 +257,8 @@ export function OfxPreviewModal({ data, onClose }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: '100%',
-          maxWidth: 800,
-          height: '90vh',
+          maxWidth: '800px',
+          maxHeight: '80vh',
           background: '#18181B',
           borderRadius: 16,
           border: '1px solid #3F3F46',
@@ -365,7 +365,7 @@ export function OfxPreviewModal({ data, onClose }) {
                 fontFamily: 'monospace',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-all',
-                maxHeight: 'calc(90vh - 150px)',
+                maxHeight: 'calc(80vh - 150px)',
                 overflow: 'auto'
               }}>
                 {rawContent || 'Carregando...'}

@@ -275,7 +275,8 @@ export default function Profile() {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value.slice(0, 50))}
+                maxLength={50}
                 required
                 style={{
                   width: '100%',

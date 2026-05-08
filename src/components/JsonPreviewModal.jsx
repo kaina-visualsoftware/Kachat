@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import { X, Copy, Download, Code, TreePine, Search, ChevronRight, ChevronDown } from 'lucide-react'
+import { X, Copy, Download, Search, TreePine } from 'lucide-react'
 
-export function JsoncPreviewModal({ data, onClose }) {
+export function JsonPreviewModal({ data, onClose }) {
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -31,12 +31,7 @@ export function JsoncPreviewModal({ data, onClose }) {
 
   const parsedJson = useMemo(() => {
     try {
-      // Remove comments for parsing
-      const withoutComments = content
-        .replace(/\/\/.*$/gm, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-      
-      return JSON.parse(withoutComments)
+      return JSON.parse(content)
     } catch (e) {
       return null
     }
@@ -55,23 +50,16 @@ export function JsoncPreviewModal({ data, onClose }) {
 
   const highlightJson = (line, indent = 0) => {
     let result = escapeHtml(line)
-    // Keys
     result = result.replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
-    // Strings
     result = result.replace(/: "([^"]*)"/g, ': <span class="json-string">"$1"</span>')
-    // Numbers
     result = result.replace(/: (-?\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
-    // Booleans/null
     result = result.replace(/\b(true|false|null)\b/g, '<span class="json-boolean">$1</span>')
     return result
   }
 
   const prettyJson = useMemo(() => {
     try {
-      const withoutComments = content
-        .replace(/\/\/.*$/gm, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-      const parsed = JSON.parse(withoutComments)
+      const parsed = JSON.parse(content)
       return JSON.stringify(parsed, null, 2)
     } catch (e) {
       return content
@@ -81,7 +69,7 @@ export function JsoncPreviewModal({ data, onClose }) {
   const renderTree = (obj, key = null, depth = 0, path = 'root') => {
     const isObject = obj !== null && typeof obj === 'object'
     const isArray = Array.isArray(obj)
-    const isCollapsed = depth > 2 // Auto-collapse deep nodes
+    const isCollapsed = depth > 2
     
     if (!isObject) {
       const valueColor = typeof obj === 'string' ? '#CE9178' : typeof obj === 'number' ? '#B5CEA8' : '#569CD6'
@@ -137,7 +125,7 @@ export function JsoncPreviewModal({ data, onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ 
               width: 36, height: 36, borderRadius: 8, 
-              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              background: 'linear-gradient(135deg, #10B981, #059669)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 11, fontWeight: 700, color: '#FFFFFF'
             }}>JSON</div>
@@ -156,7 +144,7 @@ export function JsoncPreviewModal({ data, onClose }) {
             {parsedJson && (
               <button onClick={(e) => { e.stopPropagation(); setShowTree(!showTree) }}
                 style={{
-                  padding: '6px 12px', background: showTree ? '#F59E0B' : 'transparent',
+                  padding: '6px 12px', background: showTree ? '#10B981' : 'transparent',
                   border: '1px solid #3F3F46', borderRadius: 6, color: showTree ? 'white' : '#A1A1AA',
                   fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4
                 }}>

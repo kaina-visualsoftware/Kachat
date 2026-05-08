@@ -198,12 +198,21 @@ export function renderMessageContent(content, isMe, sender, {
       )
     }
     
-    // SVG
+    // SVG - Blocked for security (can contain scripts)
     if (fileName.endsWith('.svg') || fileType === 'image/svg+xml') {
       return (
-        <div style={{ marginTop: 8, maxWidth: 300 }}>
-          <img src={url} alt={fileName} style={{ maxWidth: '100%', borderRadius: 12, cursor: 'pointer', background: 'rgba(255, 255, 255, 0.05)' }} onClick={() => setPreviewSvg?.(url)} />
-          <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4, color: theme.text }}>{fileName} ({(fileSize / 1024).toFixed(1)} KB)</div>
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => window.open(url, '_blank')}>
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: 8, 
+            padding: '12px 16px', background: 'rgba(63, 63, 70, 0.5)', 
+            borderRadius: 12, border: `1px solid ${theme.border || '#3F3F46'}` 
+          }}>
+            <FileText size={24} style={{ color: '#fbbf24' }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: theme.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fileName}</div>
+              <div style={{ fontSize: 11, opacity: 0.7, color: theme.subtext }}>{(fileSize / 1024).toFixed(1)} KB • Baixar para visualizar</div>
+            </div>
+          </div>
         </div>
       )
     }
@@ -239,10 +248,13 @@ export function renderMessageContent(content, isMe, sender, {
     }
     
     // JSON
-    if (fileName.endsWith('.json') || fileType === 'application/json') {
+    const jsonExtensions = ['.json']
+    const isJsonFile = jsonExtensions.some(ext => fileName.toLowerCase().endsWith(ext))
+    const isJsonType = fileType === 'application/json' || fileType === 'text/json'
+    if (isJsonFile || isJsonType) {
       const colors = fileColors.json
       return (
-        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewDoc?.({ url, fileName, fileType: 'application/json' })}>
+        <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={() => setPreviewJson?.({ url, fileName, fileSize })}>
           <div style={{ 
             display: 'flex', alignItems: 'center', gap: 8, 
             padding: '12px 16px', background: colors.bg, 
@@ -480,7 +492,10 @@ export function renderMessageContent(content, isMe, sender, {
     }
     
     // Markdown (.md, .markdown)
-    if (fileName.toLowerCase().endsWith('.md') || fileName.toLowerCase().endsWith('.markdown') || fileType === 'text/markdown') {
+    const mdExtensions = ['.md', '.markdown']
+    const isMdFile = mdExtensions.some(ext => fileName.toLowerCase().endsWith(ext))
+    const isMdType = fileType === 'text/markdown' || fileType === 'text/x-markdown' || fileType === 'text/x-web-markdown'
+    if (isMdFile || isMdType) {
       const colors = fileColors.md
       return (
         <div style={{ marginTop: 8, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); e.preventDefault(); setPreviewMd?.({ url, fileName, fileSize }) }}>
@@ -756,7 +771,20 @@ export function renderMessageContent(content, isMe, sender, {
   const renderedParts = renderTextWithLinks(content, isMe)
   
   if (!Array.isArray(renderedParts)) {
-    return <span style={{ color: theme.text }}>{content}</span>
+    const lines = content.split('\n')
+    if (lines.length > 1) {
+      return (
+        <span style={{ color: isMe ? '#FFFFFF' : theme.text, whiteSpace: 'pre-wrap' }}>
+          {lines.map((line, idx) => (
+            <span key={idx}>
+              {line}
+              {idx < lines.length - 1 && <br />}
+            </span>
+          ))}
+        </span>
+      )
+    }
+    return <span style={{ color: isMe ? '#FFFFFF' : theme.text }}>{content}</span>
   }
 
   return renderedParts.map((part) => {
@@ -772,6 +800,19 @@ export function renderMessageContent(content, isMe, sender, {
     if (part.type === 'link') {
       return <a key={part.key} href={part.url} target="_blank" rel="noopener noreferrer" style={{ color: theme.text, textDecoration: 'underline', fontWeight: 500 }}>{part.url}</a>
     }
-    return <span key={part.key} style={{ color: theme.text }}>{part.content}</span>
+    if (part.type === 'text' && part.content && part.content.includes('\n')) {
+      const lines = part.content.split('\n')
+      return (
+        <span key={part.key} style={{ color: isMe ? '#FFFFFF' : theme.text }}>
+          {lines.map((line, idx) => (
+            <span key={idx}>
+              {line}
+              {idx < lines.length - 1 && <br />}
+            </span>
+          ))}
+        </span>
+      )
+    }
+    return <span key={part.key} style={{ color: isMe ? '#FFFFFF' : theme.text }}>{part.content}</span>
   })
 }

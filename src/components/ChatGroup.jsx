@@ -34,8 +34,11 @@ export default function ChatGroup() {
       if (!error && data) return data
       return []
     },
-    sendMessage: async (content) => {
-      await sendGroupMessage(groupId, content)
+    sendMessage: async (content, replyTo = null) => {
+      const result = await sendGroupMessage(groupId, content, replyTo)
+      if (result.error) {
+        alert(result.error.message)
+      }
     },
     uploadFiles: (files) => uploadChatFiles(files, null, groupId),
     subscribe: (setMessages, chatId) => {

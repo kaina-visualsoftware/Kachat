@@ -15,6 +15,37 @@ export default function ChatDM() {
   const [currentUserName, setCurrentUserName] = useState('')
   const [receiverProfile, setReceiverProfile] = useState(null)
 
+  const lastMessageTime = useRef(0)
+  const messageCount = useRef(0)
+  const messageCountReset = useRef(null)
+
+  const checkRateLimit = () => {
+    const now = Date.now()
+    const minInterval = 1000
+    const maxBurst = 5
+    const burstWindow = 10000
+
+    if (now - lastMessageTime.current < minInterval) {
+      return { allowed: false, reason: 'Aguarde um momento antes de enviar outra mensagem.' }
+    }
+
+    if (!messageCountReset.current || now - messageCountReset.current > burstWindow) {
+      messageCount.current = 1
+      messageCountReset.current = now
+      lastMessageTime.current = now
+      return { allowed: true }
+    }
+
+    messageCount.current++
+    lastMessageTime.current = now
+
+    if (messageCount.current > maxBurst) {
+      return { allowed: false, reason: 'Muitas mensagens. Aguarde alguns segundos.' }
+    }
+
+    return { allowed: true }
+  }
+
   const chatLogic = useChatLogic({
     chatType: 'dm',
     chatId: receiverId,
@@ -26,11 +57,17 @@ export default function ChatDM() {
         .order('created_at')
       return data || []
     },
-    sendMessage: async (content) => {
+    sendMessage: async (content, replyTo = null) => {
+      const rateCheck = checkRateLimit()
+      if (!rateCheck.allowed) {
+        alert(rateCheck.reason)
+        return
+      }
       await supabase.from('direct_messages').insert({
         sender_id: user.id,
         receiver_id: receiverId,
-        content
+        content,
+        reply_to: replyTo
       })
     },
     uploadFiles: (files) => uploadChatFiles(files, receiverId),

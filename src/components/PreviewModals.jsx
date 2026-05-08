@@ -4,6 +4,7 @@ import { OfxPreviewModal } from './OfxPreviewModal'
 import { XmlPreviewModal } from './XmlPreviewModal'
 import { SqlPreviewModal } from './SqlPreviewModal'
 import { JsoncPreviewModal } from './JsoncPreviewModal'
+import { JsonPreviewModal } from './JsonPreviewModal'
 import { CsvPreviewModal } from './CsvPreviewModal'
 import { ArchivePreviewModal } from './ArchivePreviewModal'
 import { CodePreviewModal } from './CodePreviewModal'
@@ -12,8 +13,20 @@ import { EnhancedHtmlPreviewModal } from './HtmlPreviewModal'
 
 export function ImagePreviewModal({ src, onClose }) {
   if (!src) return null
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <div 
+      role="dialog"
+      aria-modal="true"
+      aria-label="Visualização de imagem"
       onClick={onClose}
       style={{
         position: 'fixed',
@@ -45,6 +58,7 @@ export function ImagePreviewModal({ src, onClose }) {
           e.stopPropagation()
           onClose()
         }}
+        aria-label="Fechar visualização"
         style={{
           position: 'absolute',
           top: 20,
@@ -70,8 +84,20 @@ export function ImagePreviewModal({ src, onClose }) {
 
 export function VideoPreviewModal({ videoId, onClose }) {
   if (!videoId) return null
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <div 
+      role="dialog"
+      aria-modal="true"
+      aria-label="Reprodução de vídeo"
       onClick={onClose}
       style={{
         position: 'fixed',
@@ -84,18 +110,19 @@ export function VideoPreviewModal({ videoId, onClose }) {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
-        cursor: 'pointer',
-        padding: 40
+        cursor: 'pointer'
       }}
     >
-      <div style={{ 
-        position: 'relative', 
-        width: '100%', 
-        maxWidth: '90vw', 
-        paddingBottom: '56.25%', 
-        height: 0, 
-        borderRadius: 12 
-      }}>
+      <div 
+        onClick={e => e.stopPropagation()}
+        style={{ 
+          position: 'relative', 
+          width: '90vw', 
+          maxWidth: '1400px',
+          aspectRatio: '16/9',
+          borderRadius: 16,
+          overflow: 'hidden'
+        }}>
         <iframe
           src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`}
           title="YouTube Video"
@@ -105,7 +132,6 @@ export function VideoPreviewModal({ videoId, onClose }) {
             left: 0,
             width: '100%',
             height: '100%',
-            borderRadius: 16,
             border: 'none'
           }}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -117,6 +143,7 @@ export function VideoPreviewModal({ videoId, onClose }) {
           e.stopPropagation()
           onClose()
         }}
+        aria-label="Fechar visualização"
         style={{
           position: 'absolute',
           top: 20,
@@ -142,8 +169,27 @@ export function VideoPreviewModal({ videoId, onClose }) {
 
 export function PdfPreviewModal({ src, onClose }) {
   if (!src) return null
+  
+  const [pdfError, setPdfError] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  
+  const googleDocsUrl = src.includes('drive.google') || src.includes('googledrive')
+    ? `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(src)}`
+    : src
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <div 
+      role="dialog"
+      aria-modal="true"
+      aria-label="Visualização de PDF"
       onClick={onClose}
       style={{
         position: 'fixed',
@@ -151,49 +197,113 @@ export function PdfPreviewModal({ src, onClose }) {
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(0, 0, 0, 0.95)',
+        background: 'rgba(0, 0, 0, 0.98)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
-        cursor: 'pointer',
-        padding: 40
+        cursor: 'pointer'
       }}
     >
-      <iframe
-        src={src}
-        title="PDF Preview"
+      <div 
+        onClick={e => e.stopPropagation()}
+        role="document"
         style={{
-          width: '90vw',
-          height: '90vh',
-          borderRadius: 12,
-          border: 'none'
-        }}
-      />
-      <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onClose()
-        }}
-        style={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.1)',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          color: 'white',
-          fontSize: 20,
-          cursor: 'pointer',
+          width: '100vw',
+          height: '100vh',
+          maxWidth: 'none',
+          maxHeight: 'none',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
+          flexDirection: 'column',
+          background: '#1a1a1a'
         }}
       >
-        ×
-      </button>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 20px',
+          background: '#27272A',
+          borderBottom: '1px solid #3F3F46'
+        }}>
+          <span style={{ color: '#FAFAFA', fontSize: 14, fontWeight: 500 }}>Visualização de PDF</span>
+          <button
+            onClick={onClose}
+            aria-label="Fechar visualização"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid #3F3F46',
+              color: '#FAFAFA',
+              fontSize: 18,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ×
+          </button>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+          {isLoading && (
+            <div style={{ 
+              position: 'absolute', 
+              top: '50%', 
+              left: '50%', 
+              transform: 'translate(-50%, -50%)',
+              color: '#A1A1AA',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12
+            }}>
+              <div style={{ 
+                width: 24, height: 24, 
+                border: '2px solid #3F3F46', 
+                borderTopColor: '#8B5CF6', 
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
+              Carregando PDF...
+            </div>
+          )}
+          {pdfError ? (
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              alignItems: 'center', 
+              justifyContent: 'center',
+              height: '100%',
+              color: '#EF4444',
+              gap: 16
+            }}>
+              <span>Erro ao carregar PDF</span>
+              <a 
+                href={src} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ color: '#8B5CF6', textDecoration: 'underline' }}
+              >
+                Abrir em nova aba
+              </a>
+            </div>
+          ) : (
+            <iframe
+              src={googleDocsUrl}
+              title="PDF Preview"
+              onLoad={() => setIsLoading(false)}
+              onError={() => { setPdfError(true); setIsLoading(false); }}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none'
+              }}
+            />
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -219,10 +329,11 @@ export function DocPreviewModal({ data, onClose }) {
       }}
     >
       <div style={{ 
-        width: '90vw', 
-        height: '90vh', 
+        width: '100%', 
+        maxWidth: '800px', 
+        maxHeight: '80vh', 
         background: '#1a1a1a', 
-        borderRadius: 12, 
+        borderRadius: 16, 
         overflow: 'auto', 
         padding: 20, 
         color: '#FAFAFA' 
@@ -308,10 +419,11 @@ export function HtmlPreviewModal({ src, onClose }) {
       <div 
         onClick={e => e.stopPropagation()}
         style={{
-          width: '90vw',
-          height: '90vh',
+          width: '100%',
+          maxWidth: '800px',
+          maxHeight: '80vh',
           background: '#18181B',
-          borderRadius: 12,
+          borderRadius: 16,
           border: '1px solid #3F3F46',
           display: 'flex',
           flexDirection: 'column',
@@ -465,8 +577,8 @@ export function SvgPreviewModal({ src, onClose }) {
         src={src}
         alt="SVG Preview"
         style={{
-          maxWidth: '90vw',
-          maxHeight: '90vh',
+          maxWidth: '800px',
+          maxHeight: '80vh',
           borderRadius: 12,
           objectFit: 'contain'
         }}
@@ -514,25 +626,52 @@ export function PreviewModals({
   setPreviewSvg,
   previewCsv, 
   setPreviewCsv,
-  previewPython,
+  previewPython, 
   setPreviewPython,
-  previewOfx,
+  previewOfx, 
   setPreviewOfx,
-  previewXml,
+  previewXml, 
   setPreviewXml,
-  previewSql,
+  previewSql, 
   setPreviewSql,
-  previewJsonc,
+  previewJsonc, 
   setPreviewJsonc,
-  previewJson,
+  previewJson, 
   setPreviewJson,
-  previewMd,
+  previewMd, 
   setPreviewMd,
-  previewCode,
+  previewCode, 
   setPreviewCode,
-  previewArchive,
+  previewArchive, 
   setPreviewArchive
 }) {
+  // Base styles shared by all preview modals
+  const baseOverlayStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.95)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+    cursor: 'pointer',
+    padding: 20,
+  };
+  
+  const innerModalStyle = {
+    width: '100%',
+    maxWidth: '800px',
+    maxHeight: '80vh',
+    background: '#1e1e1e',
+    borderRadius: 16,
+    border: '1px solid #3F3F46',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+  };
   return (
     <>
       {previewImage && (
@@ -627,7 +766,7 @@ export function PreviewModals({
       )}
       
       {previewJson && (
-        <JsoncPreviewModal 
+        <JsonPreviewModal 
           data={previewJson} 
           onClose={() => setPreviewJson(null)} 
         />

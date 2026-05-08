@@ -53,10 +53,11 @@ export function PythonPreviewModal({ data, onClose }) {
       <div 
         onClick={e => e.stopPropagation()}
         style={{
-          width: '90vw',
-          height: '90vh',
+          width: '100%',
+          maxWidth: '800px',
+          maxHeight: '80vh',
           background: '#1e1e1e',
-          borderRadius: 12,
+          borderRadius: 16,
           border: '1px solid #3F3F46',
           display: 'flex',
           flexDirection: 'column',

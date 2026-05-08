@@ -1,4 +1,35 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
+
+const lastMessageTime = { current: 0 };
+const messageCount = { current: 0 };
+const messageCountReset = { current: null };
+
+const checkRateLimit = () => {
+  const now = Date.now();
+  const minInterval = 1000;
+  const maxBurst = 5;
+  const burstWindow = 10000;
+
+  if (now - lastMessageTime.current < minInterval) {
+    return { allowed: false, reason: 'Aguarde um momento antes de enviar outra mensagem.' };
+  }
+
+  if (!messageCountReset.current || now - messageCountReset.current > burstWindow) {
+    messageCount.current = 1;
+    messageCountReset.current = now;
+    lastMessageTime.current = now;
+    return { allowed: true };
+  }
+
+  messageCount.current++;
+  lastMessageTime.current = now;
+
+  if (messageCount.current > maxBurst) {
+    return { allowed: false, reason: 'Muitas mensagens. Aguarde alguns segundos.' };
+  }
+
+  return { allowed: true };
+};
 import { supabase } from "../supabase";
 
 const AuthContext = createContext();
@@ -119,6 +150,8 @@ export function AuthProvider({ children }) {
       const mimeTypeMap = {
         xml: 'text/xml',
         json: 'application/json',
+        jsonc: 'application/jsonc',
+        json5: 'application/jsonc',
         csv: 'text/csv',
         svg: 'image/svg+xml',
         ico: 'image/x-icon',
@@ -505,16 +538,46 @@ export function AuthProvider({ children }) {
     return { data, error: null };
   };
 
-  const sendGroupMessage = async (groupId, content) => {
+  const sendGroupMessage = async (groupId, content, replyTo = null) => {
     if (!user) return { error: new Error("No user") };
+    
+    const rateCheck = checkRateLimit();
+    if (!rateCheck.allowed) {
+      return { error: new Error(rateCheck.reason) };
+    }
     
     const { error } = await supabase
       .from("group_messages")
       .insert({
         group_id: groupId,
         sender_id: user.id,
-        content
+        content,
+        reply_to: replyTo
       });
+    
+    return { error };
+  };
+
+  const updateGroupMessage = async (messageId, content) => {
+    if (!user) return { error: new Error("No user") };
+    
+    const { error } = await supabase
+      .from("group_messages")
+      .update({ content })
+      .eq("id", messageId)
+      .eq("sender_id", user.id);
+    
+    return { error };
+  };
+
+  const updateDirectMessage = async (messageId, content) => {
+    if (!user) return { error: new Error("No user") };
+    
+    const { error } = await supabase
+      .from("direct_messages")
+      .update({ content })
+      .eq("id", messageId)
+      .eq("sender_id", user.id);
     
     return { error };
   };
@@ -539,6 +602,8 @@ export function AuthProvider({ children }) {
         removeGroupMember,
         leaveGroup,
         deleteGroup,
+        updateGroupMessage,
+        updateDirectMessage,
         updateGroup,
         getGroupMedia,
         clearGroupMessages,

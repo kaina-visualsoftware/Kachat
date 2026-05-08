@@ -1,13 +1,14 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import Login from './components/Login'
-import UserList from './components/UserList'
-import ChatDM from './components/ChatDM'
-import GroupList from './components/GroupList'
-import ChatGroup from './components/ChatGroup'
-import EmptyState from './components/EmptyState'
-import Profile from './components/Profile'
-import { useState, useEffect } from 'react'
+import { lazy, Suspense, useState } from 'react'
+
+const Login = lazy(() => import('./components/Login'))
+const UserList = lazy(() => import('./components/UserList'))
+const ChatDM = lazy(() => import('./components/ChatDM'))
+const GroupList = lazy(() => import('./components/GroupList'))
+const ChatGroup = lazy(() => import('./components/ChatGroup'))
+const EmptyState = lazy(() => import('./components/EmptyState'))
+const Profile = lazy(() => import('./components/Profile'))
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -42,6 +43,10 @@ function LoadingScreen() {
   )
 }
 
+function LazyFallback({ children }) {
+  return <Suspense fallback={<LoadingScreen />}>{children}</Suspense>
+}
+
 function AppRoutes() {
   const { user, loading } = useAuth()
   const [activeTab, setActiveTab] = useState(() => {
@@ -53,47 +58,50 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
+      <Route path="/login" element={<LazyFallback>{user ? <Navigate to="/" replace /> : <Login />}</LazyFallback>} />
       <Route path="/" element={
         <ProtectedRoute>
-          <WhatsAppLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-            <EmptyState />
-          </WhatsAppLayout>
+          <LazyFallback>
+            <WhatsAppLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+              <EmptyState />
+            </WhatsAppLayout>
+          </LazyFallback>
         </ProtectedRoute>
       } />
       <Route path="/groups" element={
         <ProtectedRoute>
-          <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
-            <EmptyState />
-          </WhatsAppLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/groups" element={
-        <ProtectedRoute>
-          <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
-            <EmptyState />
-          </WhatsAppLayout>
+          <LazyFallback>
+            <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
+              <EmptyState />
+            </WhatsAppLayout>
+          </LazyFallback>
         </ProtectedRoute>
       } />
       <Route path="/group/:groupId" element={
         <ProtectedRoute>
-          <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
-            <ChatGroup />
-          </WhatsAppLayout>
+          <LazyFallback>
+            <WhatsAppLayout activeTab="groups" setActiveTab={setActiveTab}>
+              <ChatGroup />
+            </WhatsAppLayout>
+          </LazyFallback>
         </ProtectedRoute>
       } />
       <Route path="/chat/:receiverId" element={
         <ProtectedRoute>
-          <WhatsAppLayout activeTab="conversations" setActiveTab={setActiveTab}>
-            <ChatDM />
-          </WhatsAppLayout>
+          <LazyFallback>
+            <WhatsAppLayout activeTab="conversations" setActiveTab={setActiveTab}>
+              <ChatDM />
+            </WhatsAppLayout>
+          </LazyFallback>
         </ProtectedRoute>
       } />
       <Route path="/profile" element={
         <ProtectedRoute>
-          <WhatsAppLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-            <Profile />
-          </WhatsAppLayout>
+          <LazyFallback>
+            <WhatsAppLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+              <Profile />
+            </WhatsAppLayout>
+          </LazyFallback>
         </ProtectedRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />

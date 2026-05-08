@@ -558,7 +558,8 @@ function CreateGroupModal({ onClose, onCreated }) {
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value.slice(0, 100))}
+              maxLength={100}
               placeholder="Digite o nome do grupo..."
               style={{
                 width: '100%',
@@ -587,7 +588,8 @@ function CreateGroupModal({ onClose, onCreated }) {
             </label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value.slice(0, 500))}
+              maxLength={500}
               placeholder="Digite uma descrição..."
               rows={3}
               style={{

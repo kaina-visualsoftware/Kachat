@@ -192,7 +192,8 @@ export default function EditGroupModal({ group, onClose, onSuccess }) {
             </label>
             <textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={e => setDescription(e.target.value.slice(0, 500))}
+              maxLength={500}
               style={{
                 width: '100%',
                 maxWidth: '100%',

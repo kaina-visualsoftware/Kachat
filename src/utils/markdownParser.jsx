@@ -7,6 +7,54 @@ const escapeHtml = (text) => {
     .replace(/'/g, '&#039;')
 }
 
+const stripTags = (html) => {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+    .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
+    .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, '[SVG bloqueado]')
+    .replace(/<[^>]+>/g, '')
+}
+
+const isValidUrl = (url) => {
+  if (!url || typeof url !== 'string') return false
+  
+  const trimmed = url.trim().toLowerCase()
+  
+  const invalidProtocols = [
+    'javascript:',
+    'data:',
+    'vbscript:',
+    'mailto:',
+    'tel:',
+    'file:',
+    'ftp:',
+    'ws:',
+    'wss:'
+  ]
+  
+  for (const protocol of invalidProtocols) {
+    if (trimmed.startsWith(protocol)) {
+      return false
+    }
+  }
+  
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return false
+  }
+  
+  return true
+}
+
+const sanitizeUrl = (url) => {
+  if (!isValidUrl(url)) {
+    return null
+  }
+  return url
+}
+
 const hasMarkdown = (text) => {
   const patterns = [
     /^#{1,6}\s+.+$/m,
@@ -33,7 +81,11 @@ const parseMarkdown = (text, inline = true) => {
     html = html.replace(/\*([^*]+)\*/g, '<em style="font-style:italic;color:inherit;">$1</em>')
     html = html.replace(/_([^_]+)_/g, '<em style="font-style:italic;color:inherit;">$1</em>')
     html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(63,63,70,0.5);padding:2px 6px;border-radius:4px;font-family:monospace;font-size:12px;">$1</code>')
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:#8B5CF6;text-decoration:underline;">$1</a>')
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+      const safeUrl = sanitizeUrl(url)
+      if (!safeUrl) return `<span style="color:#A1A1AA;text-decoration:line-through;">${text}</span>`
+      return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color:#8B5CF6;text-decoration:underline;">${text}</a>`
+    })
   } else {
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
       return `<pre style="background:#27272A;padding:16px;border-radius:8px;overflow-x:auto;margin:12px 0;"><code>${code.trim()}</code></pre>`
@@ -53,7 +105,11 @@ const parseMarkdown = (text, inline = true) => {
     html = html.replace(/\*([^*]+)\*/g, '<em style="font-style:italic;color:inherit;">$1</em>')
     html = html.replace(/_([^_]+)_/g, '<em style="font-style:italic;color:inherit;">$1</em>')
     
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color:#8B5CF6;text-decoration:underline;">$1</a>')
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+      const safeUrl = sanitizeUrl(url)
+      if (!safeUrl) return `<span style="color:#A1A1AA;text-decoration:line-through;">${text}</span>`
+      return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color:#8B5CF6;text-decoration:underline;">${text}</a>`
+    })
     
     html = html.replace(/^[\-\*] (.+)$/gm, '<li style="color:inherit;margin:4px 0;padding-left:8px;">• $1</li>')
     html = html.replace(/^\d+\. (.+)$/gm, '<li style="color:inherit;margin:4px 0;padding-left:8px;list-style:decimal;">$1</li>')

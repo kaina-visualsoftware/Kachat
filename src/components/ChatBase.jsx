@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Send, Upload, Mic, Square, X } from 'lucide-react'
+import { Send, Upload, Mic, Square, X, Quote, Reply } from 'lucide-react'
 import { PreviewModals } from './PreviewModals'
 import { renderMessageContent } from '../utils/renderMessageContent'
 import { theme } from '../theme'
@@ -71,6 +71,21 @@ export function ChatBase({
   previewMd, setPreviewMd,
   previewCode, setPreviewCode,
   previewArchive, setPreviewArchive,
+  
+  // Reply
+  replyTo,
+  setReplyTo,
+  
+  // Edit
+  editingMessage,
+  setEditingMessage,
+  startEditing,
+  cancelEditing,
+  saveEdit,
+  
+  // Message menu
+  messageMenu,
+  setMessageMenu,
   
   // Modais extras (render prop)
   renderExtraModals,
@@ -160,7 +175,8 @@ export function ChatBase({
         flex: 1,
         overflowY: 'auto',
         padding: '16px',
-        paddingBottom: 0
+        paddingBottom: 0,
+        position: 'relative'
       }}>
         {loading ? (
           <div style={{ textAlign: 'center', color: '#FFFFFF', paddingTop: 40 }}>
@@ -246,7 +262,8 @@ messages.map((message, index) => {
                   )}
                   
                   {/* Message bubble */}
-                  <div style={{
+                  <div 
+                    style={{
                     background: isMe 
                       ? `linear-gradient(135deg, #6D28D9, #5B21B6)` 
                       : theme.bgTertiary,
@@ -262,45 +279,126 @@ messages.map((message, index) => {
                     wordBreak: 'break-word',
                     boxShadow: isMe 
                       ? '0 4px 12px rgba(99, 102, 241, 0.4)' 
-                      : '0 4px 12px rgba(0, 0, 0, 0.4)'
+                      : '0 4px 12px rgba(0, 0, 0, 0.4)',
+                    cursor: 'text'
                   }}>
+                    {/* Reply preview inside bubble */}
+                    {message.reply_to && (
+                      <div style={{
+                        background: isMe ? 'rgba(0,0,0,0.2)' : 'rgba(139, 92, 246, 0.15)',
+                        borderLeft: '3px solid #8B5CF6',
+                        borderRadius: '8px 8px 8px 4px',
+                        padding: '8px 12px',
+                        marginBottom: 8
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          marginBottom: 4
+                        }}>
+                          <Reply size={12} color={isMe ? '#C4B5FD' : '#A78BFA'} />
+                          <span style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: isMe ? '#C4B5FD' : '#A78BFA'
+                          }}>
+                            {message.reply_to.sender_name || 'Usuário'}
+                          </span>
+                        </div>
+                        <div style={{
+                          fontSize: 12,
+                          color: isMe ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.6)',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical'
+                        }}>
+                          {message.reply_to.content}
+                        </div>
+                      </div>
+                    )}
                     <div style={{
                       color: theme.text,
                       fontSize: 14,
                       lineHeight: 1.5,
-                      marginBottom: isLastInGroup ? 4 : 0
-                    }}>
-                      {renderMessageContent(message.content, isMe, sender, {
-                        setPreviewImage,
-                        setPreviewPdf,
-                        setPreviewDoc,
-                        setPreviewHtml,
-                        setPreviewSvg,
-                        setPreviewCsv,
-                        setPreviewPython,
-                        setPreviewOfx,
-                        setPreviewXml,
-                        setPreviewSql,
-                        setPreviewJsonc,
-                        setPreviewJson,
-                        setPreviewMd,
-                        setPreviewCode,
-                        setPreviewArchive
-                      })}
+                        marginBottom: isLastInGroup ? 4 : 0
+                      }}>
+                        {renderMessageContent(message.content, isMe, sender, {
+                          setPreviewImage,
+                          setPreviewPdf,
+                          setPreviewDoc,
+                          setPreviewHtml,
+                          setPreviewSvg,
+                          setPreviewCsv,
+                          setPreviewPython,
+                          setPreviewOfx,
+                          setPreviewXml,
+                          setPreviewSql,
+                          setPreviewJsonc,
+                          setPreviewJson,
+                          setPreviewMd,
+                          setPreviewCode,
+                          setPreviewArchive
+                        })}
                     </div>
                     {(isLastInGroup || isGroupChat) && (
                       <div style={{
-                        fontSize: 10,
-                        color: isMe ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.5)',
-                        textAlign: 'right',
-                        marginTop: 2
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        marginTop: 2,
+                        gap: 4
                       }}>
-                        {(() => {
-                          const date = new Date(message.created_at)
-                          const offset = -3 * 60
-                          const adjusted = new Date(date.getTime() + offset * 60 * 1000)
-                          return adjusted.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                        })()}
+                        <span style={{
+                          fontSize: 10,
+                          color: isMe ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.5)'
+                        }}>
+                          {(() => {
+                            const date = new Date(message.created_at)
+                            const offset = -3 * 60
+                            const adjusted = new Date(date.getTime() + offset * 60 * 1000)
+                            return adjusted.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                          })()}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            setMessageMenu({
+                              messageId: message.id,
+                              x: rect.right - 10,
+                              y: rect.top,
+                              isMe,
+                              message
+                            })
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: isMe ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.4)',
+                            cursor: 'pointer',
+                            padding: '2px 6px',
+                            fontSize: 16,
+                            lineHeight: 1,
+                            borderRadius: 4,
+                            opacity: 0.7,
+                            transition: 'opacity 0.2s, background 0.2s'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.opacity = 1
+                            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.opacity = 0.7
+                            e.currentTarget.style.background = 'transparent'
+                          }}
+                          title="Mais opções"
+                        >
+                          ⋮
+                        </button>
                       </div>
                     )}
                   </div>
@@ -310,7 +408,238 @@ messages.map((message, index) => {
           })
         )}
         <div ref={messagesEndRef} />
+        
+        {/* Message Context Menu */}
+        {messageMenu && (
+          <>
+            <div 
+              onClick={() => setMessageMenu(null)}
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 999
+              }}
+            />
+            <div style={{
+              position: 'fixed',
+              top: Math.min(messageMenu.y, window.innerHeight - 180),
+              left: Math.min(messageMenu.x, window.innerWidth - 180),
+              background: '#1E1E1E',
+              border: '1px solid #3F3F46',
+              borderRadius: 12,
+              padding: '8px 0',
+              minWidth: 160,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+              zIndex: 1000,
+              animation: 'fadeInUp 0.15s ease-out'
+            }}>
+              {messageMenu.isMe && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    startEditing(messageMenu.message)
+                    setMessageMenu(null)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#E4E4E7',
+                    fontSize: 14,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    transition: 'all 0.1s ease'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.15)'; e.currentTarget.style.color = '#A78BFA' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#E4E4E7' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Editar
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyTo({
+                    id: messageMenu.message.id,
+                    content: messageMenu.message.content,
+                    sender_name: messageMenu.isMe ? currentUserProfile?.username : messageMenu.message.sender?.username || 'Usuário'
+                  })
+                  setMessageMenu(null)
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#E4E4E7',
+                  fontSize: 14,
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Responder
+              </button>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Edit Message Modal */}
+      {editingMessage && (
+        <div 
+          onClick={() => cancelEditing()}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'pointer',
+            padding: 20
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 500,
+              background: '#18181B',
+              borderRadius: 16,
+              border: '1px solid #3F3F46',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+              animation: 'fadeInUp 0.2s ease-out'
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '16px 20px',
+              borderBottom: '1px solid #3F3F46'
+            }}>
+              <span style={{ color: '#FAFAFA', fontSize: 16, fontWeight: 600 }}>
+                Editar mensagem
+              </span>
+              <button
+                type="button"
+                onClick={() => cancelEditing()}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#A1A1AA',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div style={{ padding: 20 }}>
+              <textarea
+                value={editingMessage.content}
+                onChange={(e) => setEditingMessage({ ...editingMessage, content: e.target.value })}
+                autoFocus
+                rows={6}
+                style={{
+                  width: '100%',
+                  background: '#27272A',
+                  border: '1px solid #3F3F46',
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  color: '#FFFFFF',
+                  fontSize: 15,
+                  lineHeight: 1.6,
+                  resize: 'none',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#8B5CF6'}
+                onBlur={(e) => e.target.style.borderColor = '#3F3F46'}
+              />
+            </div>
+            
+            {/* Actions */}
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              justifyContent: 'flex-end',
+              padding: '12px 20px',
+              borderTop: '1px solid #3F3F46'
+            }}>
+              <button
+                type="button"
+                onClick={() => cancelEditing()}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: 10,
+                  border: '1px solid #3F3F46',
+                  background: 'transparent',
+                  color: '#A1A1AA',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.borderColor = '#52525B'}
+                onMouseLeave={(e) => e.currentTarget.style.borderColor = '#3F3F46'}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => saveEdit()}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+                  color: '#FFFFFF',
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Input Area */}
       <form 
@@ -653,15 +982,89 @@ messages.map((message, index) => {
           </div>
         )}
         
+        {/* Reply Preview */}
+        {replyTo && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 16px',
+            marginBottom: 8,
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(124, 58, 237, 0.1))',
+            borderLeft: '4px solid #8B5CF6',
+            borderRadius: '0 12px 12px 8px',
+            borderTopRightRadius: 12,
+            borderBottomRightRadius: 12
+          }}>
+            <Reply size={18} color="#8B5CF6" style={{ flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ 
+                fontSize: 12, 
+                color: '#A78BFA', 
+                fontWeight: 600, 
+                marginBottom: 4,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <span>Respondendo a</span>
+                <span style={{ color: '#C4B5FD' }}>{replyTo.sender_name || 'usuário'}</span>
+              </div>
+              <div style={{ 
+                fontSize: 13, 
+                color: '#A1A1AA', 
+                overflow: 'hidden', 
+                textOverflow: 'ellipsis', 
+                whiteSpace: 'nowrap',
+                maxWidth: '100%'
+              }}>
+                {replyTo.content?.substring(0, 80)}{replyTo.content?.length > 80 ? '...' : ''}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReplyTo(null)}
+              title="Cancelar resposta"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#EF4444',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)'
+                e.currentTarget.style.transform = 'scale(1.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        
+        
+        
         {/* Input Row */}
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
           <textarea
             ref={inputRef}
             className="chat-input"
             value={input}
-            onChange={(e) => rest.setInput(e.target.value)}
+            onChange={(e) => rest.setInput(e.target.value.slice(0, 10000))}
             onKeyDown={handleKeyDown}
             placeholder={isGroupChat ? 'Mensagem ou @menção...' : 'Mensagem...'}
+            maxLength={10000}
             rows={1}
             style={{
               flex: 1,

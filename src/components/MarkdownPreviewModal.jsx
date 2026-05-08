@@ -109,7 +109,7 @@ export function MarkdownPreviewModal({ data, onClose }) {
       justifyContent: 'center', zIndex: 9999, cursor: 'pointer', padding: 20
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        width: '100%', maxWidth: 800, height: '90vh', background: '#18181B',
+        width: '100%', maxWidth: '800px', maxHeight: '80vh', background: '#18181B',
         borderRadius: 16, border: '1px solid #3F3F46', display: 'flex',
         flexDirection: 'column', overflow: 'hidden'
       }}>

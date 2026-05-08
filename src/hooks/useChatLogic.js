@@ -44,6 +44,11 @@ export function useChatLogic({
   const [previewOfx, setPreviewOfx] = useState(null)
   const [previewXml, setPreviewXml] = useState(null)
   const [previewSql, setPreviewSql] = useState(null)
+  const [previewJsonc, setPreviewJsonc] = useState(null)
+  const [previewJson, setPreviewJson] = useState(null)
+  const [previewMd, setPreviewMd] = useState(null)
+  const [previewCode, setPreviewCode] = useState(null)
+  const [previewArchive, setPreviewArchive] = useState(null)
 
   // Command states
   const [showCommandList, setShowCommandList] = useState(false)
@@ -53,8 +58,17 @@ export function useChatLogic({
   // Mention states (only for groups)
   const [showMentionList, setShowMentionList] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
+
+  // Reply states
+  const [replyTo, setReplyTo] = useState(null)
   const [mentionFilter, setMentionFilter] = useState([])
   const [mentionIndex, setMentionIndex] = useState(0)
+
+  // Edit state
+  const [editingMessage, setEditingMessage] = useState(null)
+
+  // Message menu state
+  const [messageMenu, setMessageMenu] = useState(null)
 
   // Drag states
   const [isDragOver, setIsDragOver] = useState(false)
@@ -91,11 +105,6 @@ export function useChatLogic({
     return unsubscribe
   }, [chatId])
 
-  // Scroll to bottom on new messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
   // Load profiles when messages change
   useEffect(() => {
     if (!messages || messages.length === 0) return
@@ -120,6 +129,11 @@ export function useChatLogic({
       setIsDragOver(dragCounter > 0)
     }
   }, [dragCounter, isGroupChat])
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -169,11 +183,106 @@ export function useChatLogic({
       }
     }
     
-    await sendMessage(input)
+    await sendMessage(input, replyTo)
     setInput('')
     setShowCommandList(false)
     setShowMentionList(false)
+    setReplyTo(null)
     scrollToBottom()
+  }
+
+  const startEditing = (message) => {
+    setEditingMessage({
+      id: message.id,
+      content: message.content,
+      originalContent: message.content
+    })
+  }
+
+  const cancelEditing = () => {
+    setEditingMessage(null)
+  }
+
+  const saveEdit = async () => {
+    if (!editingMessage) return
+    
+    const newContent = editingMessage.content.trim()
+    if (!newContent || newContent === editingMessage.originalContent) {
+      setEditingMessage(null)
+      return
+    }
+
+    const messageIndex = messages.findIndex(m => m.id === editingMessage.id)
+    if (messageIndex === -1) {
+      setEditingMessage(null)
+      return
+    }
+
+    if (chatType === 'group') {
+      const { error } = await supabase
+        .from('group_messages')
+        .update({ content: newContent })
+        .eq('id', editingMessage.id)
+      if (!error) {
+        setMessages(prev => prev.map((m, i) => 
+          i === messageIndex ? { ...m, content: newContent } : m
+        ))
+      }
+    } else {
+      const { error } = await supabase
+        .from('direct_messages')
+        .update({ content: newContent })
+        .eq('id', editingMessage.id)
+      if (!error) {
+        setMessages(prev => prev.map((m, i) => 
+          i === messageIndex ? { ...m, content: newContent } : m
+        ))
+      }
+    }
+    
+    setEditingMessage(null)
+  }
+
+  const BLOCKED_MIME_TYPES = [
+    'application/x-executable',
+    'application/x-msdownload',
+    'application/x-sh',
+    'application/x-shellscript',
+    'application/x-script',
+    'application/x-python',
+    'text/x-python',
+    'text/x-shellscript',
+    'text/x-script.python',
+    'application/javascript',
+    'text/javascript',
+    'application/x-javascript',
+    'application/node',
+    'application/vnd.microsoft.portable-executable',
+    'application/x-elf',
+    'application/x-mach-binary',
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/x-rar',
+    'application/vnd.rar'
+  ]
+
+  const isFileTypeAllowed = (file) => {
+    const mime = file.type.toLowerCase()
+    
+    for (const blocked of BLOCKED_MIME_TYPES) {
+      if (mime.includes(blocked) || mime.includes(blocked.split('/')[1])) {
+        return false
+      }
+    }
+    
+    const extension = file.name.split('.').pop()?.toLowerCase()
+    const blockedExtensions = ['exe', 'sh', 'bat', 'cmd', 'msi', 'dll', 'so', 'dylib', 'app', 'jar', 'py', 'js', 'rb', 'php', 'pl', 'cgi', 'com']
+    
+    if (blockedExtensions.includes(extension)) {
+      return false
+    }
+    
+    return true
   }
 
   const handleFileSelect = (e) => {
@@ -181,9 +290,16 @@ export function useChatLogic({
     if (files.length === 0) return
     
     const maxSize = 100 * 1024 * 1024
-    const invalid = files.filter(f => f.size > maxSize)
-    if (invalid.length > 0) {
-      alert(`Arquivos muito grandes (máx 100MB): ${invalid.map(f => f.name).join(', ')}`)
+    
+    const oversized = files.filter(f => f.size > maxSize)
+    if (oversized.length > 0) {
+      alert(`Arquivos muito grandes (máx 100MB): ${oversized.map(f => f.name).join(', ')}`)
+      return
+    }
+    
+    const blocked = files.filter(f => !isFileTypeAllowed(f))
+    if (blocked.length > 0) {
+      alert(`Tipos de arquivo não permitidos: ${blocked.map(f => f.name).join(', ')}\n\nArquivos permitidos: Imagens, documentos, PDFs, texto, compactados (zip).`)
       return
     }
     
@@ -454,9 +570,22 @@ export function useChatLogic({
   }
 
   const handleKeyDown = (e) => {
-    // Allow Shift+Enter for new line
+    // Allow Shift+Enter for new line - prevent form submit
     if (e.key === 'Enter' && e.shiftKey) {
-      return // Let default behavior create new line
+      e.preventDefault()
+      // Let default behavior create new line by inserting \n
+      const textarea = e.target
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const value = textarea.value
+      const newValue = value.substring(0, start) + '\n' + value.substring(end)
+      rest.setInput(newValue)
+      
+      // Move cursor after the inserted newline
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + 1
+      }, 0)
+      return
     }
     
     // Enter without Shift sends message
@@ -532,6 +661,11 @@ export function useChatLogic({
     previewOfx, setPreviewOfx,
     previewXml, setPreviewXml,
     previewSql, setPreviewSql,
+    previewJsonc, setPreviewJsonc,
+    previewJson, setPreviewJson,
+    previewMd, setPreviewMd,
+    previewCode, setPreviewCode,
+    previewArchive, setPreviewArchive,
     showCommandList, setShowCommandList,
     filteredCommands, setFilteredCommands,
     commandIndex, setCommandIndex,
@@ -561,6 +695,12 @@ export function useChatLogic({
     cancelRecording,
     handleKeyDown,
     scrollToBottom,
+    replyTo, setReplyTo,
+    editingMessage, setEditingMessage,
+    startEditing,
+    cancelEditing,
+    saveEdit,
+    messageMenu, setMessageMenu,
     getSenderName,
     getInitials
   }
