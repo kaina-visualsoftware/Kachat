@@ -308,27 +308,35 @@ messages.map((message, index) => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 12,
-                    margin: '24px 0 16px 0',
-                    opacity: 0.6
+                    margin: '32px 0 20px 0'
                   }}>
                     <div style={{
                       flex: 1,
-                      height: '1px',
-                      background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0))'
+                      height: '2px',
+                      background: 'linear-gradient(90deg, rgba(139, 92, 246, 0), rgba(139, 92, 246, 0.4), rgba(139, 92, 246, 0))'
                     }} />
-                    <span style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: '#A1A1AA',
+                    <div style={{
+                      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)',
+                      padding: '8px 16px',
+                      borderRadius: 20,
+                      border: '1.5px solid rgba(139, 92, 246, 0.6)',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
                       whiteSpace: 'nowrap',
-                      textTransform: 'capitalize'
                     }}>
+                      <span style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: '#FFFFFF',
+                        textTransform: 'capitalize',
+                        letterSpacing: '0.3px'
+                      }}>
                       {formatDateSeparator(message.created_at)}
-                    </span>
+                      </span>
+                    </div>
                     <div style={{
                       flex: 1,
-                      height: '1px',
-                      background: 'linear-gradient(90deg, rgba(139, 92, 246, 0), rgba(139, 92, 246, 0.2))'
+                      height: '2px',
+                      background: 'linear-gradient(90deg, rgba(139, 92, 246, 0), rgba(139, 92, 246, 0.4), rgba(139, 92, 246, 0))'
                     }} />
                   </div>
                 )}
