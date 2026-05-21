@@ -98,6 +98,42 @@ export function ChatBase({
 }) {
   const isGroupChat = chatType === 'group'
 
+  // Format timestamp for messages - shows date + time for DMs, time only for groups
+  const formatMessageTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const offset = -3 * 60; // Brasília timezone
+    const adjusted = new Date(date.getTime() + offset * 60 * 1000);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const messageDate = new Date(adjusted);
+    messageDate.setHours(0, 0, 0, 0);
+    
+    const timeString = adjusted.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    if (messageDate.getTime() === today.getTime()) {
+      return timeString;
+    }
+    
+    if (messageDate.getTime() === yesterday.getTime()) {
+      return `Ontem ${timeString}`;
+    }
+    
+    const dateString = adjusted.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit'
+    });
+    
+    return `${dateString} ${timeString}`;
+  };
+
   return (
     <div style={{
       display: 'flex',
@@ -343,7 +379,7 @@ messages.map((message, index) => {
                           setPreviewArchive
                         })}
                     </div>
-                    {(isLastInGroup || isGroupChat) && (
+                    {(!isGroupChat || isLastInGroup) && (
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -355,12 +391,7 @@ messages.map((message, index) => {
                           fontSize: 10,
                           color: isMe ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.5)'
                         }}>
-                          {(() => {
-                            const date = new Date(message.created_at)
-                            const offset = -3 * 60
-                            const adjusted = new Date(date.getTime() + offset * 60 * 1000)
-                            return adjusted.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                          })()}
+                          {formatMessageTimestamp(message.created_at)}
                         </span>
                         <button
                           type="button"
