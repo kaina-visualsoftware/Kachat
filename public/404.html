@@ -5,11 +5,12 @@
     <title>Redirecionando...</title>
     <script>
       // Redireciona para index.html preservando o caminho da rota
-      const segmentCount = 1; // Como o base path é /Kachat/, o primeiro segmento é o nome do repo
       const l = window.location;
+      // Extrai o path relativo a /Kachat/
+      const pathname = l.pathname.replace(/^\/Kachat/, '');
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        '/Kachat/' + l.pathname.slice(l.pathname.indexOf('/', 1) + 1) +
+        '/Kachat/?p=' + encodeURIComponent(pathname) +
         l.search + l.hash
       );
     </script>
