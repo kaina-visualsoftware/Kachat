@@ -1,24 +1,58 @@
-```
+```gitignore
 # Dependencies
 node_modules/
 
-# Environment
-.env
-.env.local
-.env.*
+# Build artifacts
+dist/
 
-# Editors
-.vscode/
+# SSH keys
+.ssh/kachat_key
+.ssh/kachat_key.pub
+
+# Environment variables
+.env
 
 # Logs
 *.log
 
-# Build artifacts
-dist/
-build/
-*.js
+# IDE files
+.vscode/
+.idea/
 
-# Python
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
@@ -27,11 +61,190 @@ __pycache__/
 # Virtual environments
 venv/
 .venv/
-env/
-ENV/
+.env
+
+# Coverage reports
+coverage/
+htmlcov/
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Compiled binary files
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Browserslist
+.browserslist*
+
+# ESLint
+.eslintcache
+
+# Supabase
+.supabase/
+
+# NPM
+.npm/
+
+# Yarn
+.yarn/
+.yarnrc
+
+# Vite
+.vite/
+
+# Rolldown
+.rolldown/
+
+# Package lock files
+package-lock.json
+yarn.lock
+
+# GitHub Pages
+.gh-pages*
+
+# Temporary build outputs
+*.bundle.js
+*.bundle.css
+*.min.js
+*.min.css
+
+# Cache directories
+.cache/
+.tmp/
+.temp/
+
+# TypeScript
+*.tsbuildinfo
+*.tsx
+
+# Map files
+*.map
+
+# Lock files
+*.lock
+
+# Configuration backups
+*.bak
+*.backup
+
+# System files
+*.sys
+*.dll
+*.drv
+
+# Editor swap files
+*~
+.swp
+.swo
+
+# Log files
+*.log
+*.out
+*.pid
+
+# Process identifiers
+*.pid
+
+# Sensitive files
+*.key
+*.pem
+*.crt
+*.cert
+
+# Local configuration
+*.local
+*.dev
+
+# Development files
+*.dev.js
+*.dev.css
+
+# Test files
+*.test.js
+*.spec.js
+*.test.ts
+*.spec.ts
 
 # Backup files
 *.bak
-*.swp
-*~
+*.backup
+*.orig
+
+# Archive files
+*.zip
+*.rar
+*.7z
+*.tar
+*.gz
+*.bz2
+*.xz
+*.zst
+
+# Image files (not ignored as per rule)
+# *.png
+# *.jpg
+# *.jpeg
+# *.bmp
+# *.gif
+# *.webm
+
+# Video files
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+
+# Audio files
+*.mp3
+*.wav
+*.aac
+*.flac
+*.ogg
+*.m4a
+
+# Document files
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# Font files
+*.ttf
+*.otf
+*.woff
+*.woff2
+
+# Icon files
+*.ico
+*.svg
+
+# Archive and compression
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
+*.tgz
+*.tbz2
+*.txz
+*.tzst
+
+# Node modules (redundant but explicit)
+node_modules/
+
+# Distribution folder
+dist/
+
+# Build folder
+build/
 ```
