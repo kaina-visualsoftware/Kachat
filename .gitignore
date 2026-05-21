@@ -247,4 +247,6 @@ dist/
 
 # Build folder
 build/
-```
+```node_modules/
+dist/
+.ssh/
