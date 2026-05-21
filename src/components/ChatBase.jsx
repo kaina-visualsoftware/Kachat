@@ -134,6 +134,45 @@ export function ChatBase({
     return `${dateString} ${timeString}`;
   };
 
+  // Format date separator (Discord style)
+  const formatDateSeparator = (timestamp) => {
+    const date = new Date(timestamp);
+    const offset = -3 * 60; // Brasília timezone
+    const adjusted = new Date(date.getTime() + offset * 60 * 1000);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const messageDate = new Date(adjusted);
+    messageDate.setHours(0, 0, 0, 0);
+    
+    if (messageDate.getTime() === today.getTime()) {
+      return 'Hoje';
+    }
+    
+    if (messageDate.getTime() === yesterday.getTime()) {
+      return 'Ontem';
+    }
+    
+    return adjusted.toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: adjusted.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+    }).replace(/^\w/, c => c.toUpperCase());
+  };
+
+  // Get date key for message grouping
+  const getMessageDateKey = (timestamp) => {
+    const date = new Date(timestamp);
+    const offset = -3 * 60; // Brasília timezone
+    const adjusted = new Date(date.getTime() + offset * 60 * 1000);
+    return adjusted.toISOString().split('T')[0];
+  };
+
   return (
     <div style={{
       display: 'flex',
@@ -231,8 +270,13 @@ messages.map((message, index) => {
             const senderAvatar = profileFromMap?.avatar_url || sender?.avatar_url
             const senderUsername = profileFromMap?.username || sender?.username
             
-            // Check consecutive messages (WhatsApp style)
+            // Check if date changed (for date separator)
             const prevMessage = messages[index - 1]
+            const currentDateKey = getMessageDateKey(message.created_at)
+            const prevDateKey = prevMessage ? getMessageDateKey(prevMessage.created_at) : null
+            const showDateSeparator = !prevMessage || currentDateKey !== prevDateKey
+            
+            // Check consecutive messages (WhatsApp style)
             const nextMessage = messages[index + 1]
             const timeDiff = prevMessage ? new Date(message.created_at) - new Date(prevMessage.created_at) : 0
             const isConsecutive = prevMessage && prevMessage.sender_id === message.sender_id && timeDiff <= 60 * 1000
@@ -257,6 +301,39 @@ messages.map((message, index) => {
             const avatarColors = getAvatarGradient(message.sender_id)
             
             return (
+              <>
+                {/* Date Separator (Discord Style) */}
+                {showDateSeparator && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    margin: '24px 0 16px 0',
+                    opacity: 0.6
+                  }}>
+                    <div style={{
+                      flex: 1,
+                      height: '1px',
+                      background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0))'
+                    }} />
+                    <span style={{
+                      fontSize: 12,
+                      fontWeight: 500,
+                      color: '#A1A1AA',
+                      whiteSpace: 'nowrap',
+                      textTransform: 'capitalize'
+                    }}>
+                      {formatDateSeparator(message.created_at)}
+                    </span>
+                    <div style={{
+                      flex: 1,
+                      height: '1px',
+                      background: 'linear-gradient(90deg, rgba(139, 92, 246, 0), rgba(139, 92, 246, 0.2))'
+                    }} />
+                  </div>
+                )}
+                
+                {/* Message */}
               <div key={index} className="chat-message" style={{
                 display: 'flex',
                 flexDirection: isMe ? 'row-reverse' : 'row',
@@ -435,6 +512,7 @@ messages.map((message, index) => {
                   </div>
                 </div>
               </div>
+              </>
             )
           })
         )}
