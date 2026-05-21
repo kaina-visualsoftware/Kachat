@@ -1179,7 +1179,7 @@ messages.map((message, index) => {
             ref={inputRef}
             className="chat-input"
             value={input}
-            onChange={(e) => rest.setInput(e.target.value.slice(0, 10000))}
+            onChange={(e) => rest.setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             placeholder={isGroupChat ? 'Mensagem ou @menção...' : 'Mensagem...'}

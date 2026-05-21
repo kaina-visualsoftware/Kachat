@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../supabase'
 import { parseFileMessage } from '../utils/linkDetector.jsx'
 import { getCommands, processCommand } from '../utils/commands'
@@ -134,6 +134,57 @@ export function useChatLogic({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Debounced command and mention filtering
+  const filterTimeoutRef = useRef(null)
+  useEffect(() => {
+    if (filterTimeoutRef.current) {
+      clearTimeout(filterTimeoutRef.current)
+    }
+
+    filterTimeoutRef.current = setTimeout(() => {
+      if (input.startsWith('/')) {
+        const query = input.slice(1).toLowerCase()
+        const commands = getCommands()
+        const filtered = commands.filter(cmd => 
+          cmd.name.toLowerCase().includes(query) || 
+          cmd.description.toLowerCase().includes(query)
+        )
+        setFilteredCommands(filtered)
+        setShowCommandList(filtered.length > 0)
+        setCommandIndex(-1)
+      } else if (isGroupChat && input.includes('@')) {
+        const lastAtIndex = input.lastIndexOf('@')
+        const query = input.slice(lastAtIndex + 1).toLowerCase()
+        
+        if (query) {
+          const filtered = members.filter(m => 
+            m.username?.toLowerCase().includes(query) &&
+            m.user_id !== currentUserId
+          ).slice(0, 5)
+          
+          setMentionFilter(filtered)
+          setShowMentionList(filtered.length > 0)
+          setMentionQuery(query)
+          setMentionIndex(0)
+        } else {
+          const filtered = members.filter(m => m.user_id !== currentUserId).slice(0, 5)
+          setMentionFilter(filtered)
+          setShowMentionList(filtered.length > 0)
+          setMentionQuery('')
+        }
+      } else {
+        setShowCommandList(false)
+        setShowMentionList(false)
+      }
+    }, 100)
+
+    return () => {
+      if (filterTimeoutRef.current) {
+        clearTimeout(filterTimeoutRef.current)
+      }
+    }
+  }, [input, isGroupChat, members, currentUserId])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -624,44 +675,10 @@ export function useChatLogic({
     audioBlobRef.current = null
   }
 
-  // Command list handler
-  const handleInputChange = (value) => {
+  // Command list handler - simple and fast, no filtering logic
+  const handleInputChange = useCallback((value) => {
     setInput(value)
-    
-    if (value.startsWith('/')) {
-      const query = value.slice(1).toLowerCase()
-      const commands = getCommands()
-      const filtered = commands.filter(cmd => 
-        cmd.name.toLowerCase().includes(query) || 
-        cmd.description.toLowerCase().includes(query)
-      )
-      setFilteredCommands(filtered)
-      setShowCommandList(filtered.length > 0)
-      setCommandIndex(-1)
-    } else if (isGroupChat && value.includes('@')) {
-      const lastAtIndex = value.lastIndexOf('@')
-      const query = value.slice(lastAtIndex + 1).toLowerCase()
-      
-      if (query) {
-        const filtered = members.filter(m => 
-          m.username?.toLowerCase().includes(query) ||
-          m.user_id === currentUserId
-        ).slice(0, 5)
-        
-        setMentionFilter(filtered)
-        setShowMentionList(filtered.length > 0)
-        setMentionQuery(query)
-        setMentionIndex(0)
-      } else {
-        setMentionFilter(members.slice(0, 5))
-        setShowMentionList(members.length > 0)
-        setMentionQuery('')
-      }
-    } else {
-      setShowCommandList(false)
-      setShowMentionList(false)
-    }
-  }
+  }, [])
 
   const handleKeyDown = (e) => {
     // Allow Shift+Enter for new line - prevent form submit
