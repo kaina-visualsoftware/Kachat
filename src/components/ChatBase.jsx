@@ -38,6 +38,7 @@ export function ChatBase({
   uploading,
   fileInputRef,
   handleFileSelect,
+  handlePaste,
   sendFiles,
   cancelFiles,
   isDragOver,
@@ -1180,6 +1181,7 @@ messages.map((message, index) => {
             value={input}
             onChange={(e) => rest.setInput(e.target.value.slice(0, 10000))}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder={isGroupChat ? 'Mensagem ou @menção...' : 'Mensagem...'}
             maxLength={10000}
             rows={1}

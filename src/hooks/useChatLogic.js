@@ -362,6 +362,100 @@ export function useChatLogic({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  const handlePaste = async (e) => {
+    if (!e.clipboardData) return
+    
+    const items = e.clipboardData.items
+    const files = []
+    
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      
+      // Check if it's an image
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile()
+        if (file) {
+          files.push(file)
+        }
+      }
+    }
+    
+    if (files.length === 0) return
+    
+    // Prevent default paste behavior if we got images
+    e.preventDefault()
+    
+    const maxSize = 100 * 1024 * 1024
+    const oversized = files.filter(f => f.size > maxSize)
+    if (oversized.length > 0) {
+      alert(`Arquivos muito grandes (máx 100MB): ${oversized.map(f => f.name).join(', ')}`)
+      return
+    }
+    
+    const blocked = files.filter(f => !isFileTypeAllowed(f))
+    if (blocked.length > 0) {
+      alert(`Tipos de arquivo não permitidos: ${blocked.map(f => f.name).join(', ')}\n\nArquivos permitidos: Imagens, documentos, PDFs, texto, compactados (zip).`)
+      return
+    }
+    
+    // Process files like normal upload
+    setSelectedFiles(files)
+    setPreviews(files.map(file => ({
+      file,
+      url: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      name: file.name,
+      size: file.size,
+      type: file.type
+    })))
+    
+    // Initialize upload status
+    const initialStatus = {}
+    const initialProgress = {}
+    files.forEach((_, i) => {
+      initialStatus[i] = 'pending'
+      initialProgress[i] = 0
+    })
+    setUploadStatus(initialStatus)
+    setUploadProgress(initialProgress)
+    
+    // Auto-upload immediately
+    setUploading(true)
+    try {
+      // Set all to uploading
+      const statusMap = {}
+      files.forEach((_, i) => { statusMap[i] = 'uploading' })
+      setUploadStatus(statusMap)
+      
+      const result = await uploadFiles(files)
+      if (result.error) throw result.error
+      
+      // Upload each file and update progress
+      for (let i = 0; i < result.data.length; i++) {
+        const fileData = result.data[i]
+        
+        // Update progress to 100%
+        setUploadProgress(prev => ({ ...prev, [i]: 100 }))
+        setUploadStatus(prev => ({ ...prev, [i]: 'success' }))
+        
+        const messageContent = `[file]${fileData.url}|${fileData.fileName}|${fileData.fileType}|${fileData.fileSize}[/file]`
+        await sendMessage(messageContent)
+      }
+      
+      // Clear after successful upload
+      setSelectedFiles([])
+      setPreviews([])
+      setUploadProgress({})
+    } catch (error) {
+      // Set all to error
+      const errorMap = {}
+      files.forEach((_, i) => { errorMap[i] = 'error' })
+      setUploadStatus(errorMap)
+      alert('Erro no upload: ' + error.message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault()
@@ -685,6 +779,7 @@ export function useChatLogic({
     handleFileSelect,
     sendFiles,
     cancelFiles,
+    handlePaste,
     handleDragOver,
     handleDragEnter,
     handleDragLeave,
