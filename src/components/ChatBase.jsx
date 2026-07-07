@@ -110,54 +110,6 @@ export function ChatBase({
   const isGroupChat = chatType === 'group'
   const { isMobile } = useResponsive()
 
-  // Helper function to format timestamp for messages
-  const formatMessageTimestamp = (timestamp) => {
-    const date = new Date(timestamp);
-    const offset = -3 * 60; // Brasília timezone
-    const adjusted = new Date(date.getTime() + offset * 60 * 1000);
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const messageDate = new Date(adjusted);
-    messageDate.setHours(0, 0, 0, 0);
-    
-    const timeString = adjusted.toLocaleTimeString('pt-BR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    
-    if (messageDate.getTime() === today.getTime()) {
-      return { 
-        label: timeString,
-        showDate: false,
-        timeOnly: true
-      };
-    }
-    
-    if (messageDate.getTime() === yesterday.getTime()) {
-      return { 
-        label: `Ontem ${timeString}`,
-        showDate: true,
-        timeOnly: false
-      };
-    }
-    
-    const dateString = adjusted.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit'
-    });
-    
-    return { 
-      label: `${dateString} ${timeString}`,
-      showDate: true,
-      timeOnly: false
-    };
-  };
-
   // Format timestamp for messages - shows date + time for DMs, time only for groups
   const formatMessageTimestamp = (timestamp) => {
     const date = new Date(timestamp);
@@ -296,6 +248,18 @@ export function ChatBase({
           background: rgba(139, 92, 246, 0.15) !important;
         }
         
+        /* Message menu button */
+        .chat-message-menu-btn {
+          opacity: 0;
+        }
+        .chat-message:hover .chat-message-menu-btn {
+          opacity: 0.7 !important;
+        }
+        .chat-message-menu-btn:hover {
+          opacity: 1 !important;
+          background: rgba(139, 92, 246, 0.15) !important;
+        }
+        
         /* Drag overlay animation */
         .drag-overlay {
           animation: fadeInUp 0.2s ease-out;
@@ -406,7 +370,7 @@ messages.map((message, index) => {
                 display: 'flex',
                 flexDirection: isMe ? 'row-reverse' : 'row',
                 alignItems: 'flex-start',
-                marginBottom: 16,
+                marginBottom: isLastInGroup ? 12 : 4,
                 gap: 10
               }}>
                 {/* Avatar - mostrar só na primeira mensagem do grupo */}
@@ -424,7 +388,7 @@ messages.map((message, index) => {
                 {!isFirstInGroup && <div style={{ width: 36 }} />}
                 
                 <div style={{
-                    maxWidth: '85%',
+                    maxWidth: isMobile ? '88%' : '78%',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: isMe ? 'flex-end' : 'flex-start'
@@ -443,33 +407,24 @@ messages.map((message, index) => {
                   )}
                   
                   {/* Message bubble */}
-                  <div 
-                    style={{
-                    background: isMe 
-                      ? `linear-gradient(135deg, #6D28D9, #5B21B6)` 
-                      : theme.bgTertiary,
-                    border: '1px solid',
-                    borderColor: isMe 
-                      ? 'rgba(139, 92, 246, 0.4)' 
-                      : 'rgba(63, 63, 70, 0.6)',
-                    borderLeft: isMe ? '3px solid #7C3AED' : '3px solid transparent',
-                    borderRadius: 20,
-                    padding: '12px 16px',
-                    borderTopLeftRadius: isGroupChat && !isMe ? 4 : 20,
-                    borderTopRightRadius: isMe ? 4 : 20,
+                  <div style={{
+                    background: isMe ? '#5B21B6' : '#1F1F23',
+                    borderRadius: 16,
+                    borderBottomRightRadius: isMe ? 4 : 16,
+                    borderBottomLeftRadius: !isMe ? 4 : 16,
+                    padding: '10px 14px',
                     wordBreak: 'break-word',
-                    boxShadow: isMe 
-                      ? '0 4px 12px rgba(99, 102, 241, 0.4)' 
-                      : '0 4px 12px rgba(0, 0, 0, 0.4)',
-                    cursor: 'text'
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    cursor: 'text',
+                    position: 'relative'
                   }}>
                     {/* Reply preview inside bubble */}
                     {message.reply_to && (
                       <div style={{
-                        background: isMe ? 'rgba(0,0,0,0.2)' : 'rgba(139, 92, 246, 0.15)',
-                        borderLeft: '3px solid #8B5CF6',
-                        borderRadius: '8px 8px 8px 4px',
-                        padding: '8px 12px',
+                        background: isMe ? 'rgba(0,0,0,0.2)' : 'rgba(139, 92, 246, 0.1)',
+                        borderLeft: '3px solid #A78BFA',
+                        borderRadius: 8,
+                        padding: '8px 10px',
                         marginBottom: 8
                       }}>
                         <div style={{
@@ -478,7 +433,7 @@ messages.map((message, index) => {
                           gap: 6,
                           marginBottom: 4
                         }}>
-                          <Reply size={12} color={isMe ? '#C4B5FD' : '#A78BFA'} />
+                          <Reply size={11} color={isMe ? '#C4B5FD' : '#A78BFA'} />
                           <span style={{
                             fontSize: 11,
                             fontWeight: 600,
@@ -489,7 +444,7 @@ messages.map((message, index) => {
                         </div>
                         <div style={{
                           fontSize: 12,
-                          color: isMe ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.6)',
+                          color: isMe ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.55)',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           display: '-webkit-box',
@@ -501,40 +456,40 @@ messages.map((message, index) => {
                       </div>
                     )}
                     <div style={{
-                      color: theme.text,
+                      color: isMe ? '#FFFFFF' : '#E4E4E7',
                       fontSize: 14,
                       lineHeight: 1.5,
-                        marginBottom: isLastInGroup ? 4 : 0
-                      }}>
-                        {renderMessageContent(message.content, isMe, sender, {
-                          setPreviewImage,
-                          setPreviewPdf,
-                          setPreviewDoc,
-                          setPreviewHtml,
-                          setPreviewSvg,
-                          setPreviewCsv,
-                          setPreviewPython,
-                          setPreviewOfx,
-                          setPreviewXml,
-                          setPreviewSql,
-                          setPreviewJsonc,
-                          setPreviewJson,
-                          setPreviewMd,
-                          setPreviewCode,
-                          setPreviewArchive
-                        })}
+                      marginBottom: isLastInGroup ? 6 : 0
+                    }}>
+                      {renderMessageContent(message.content, isMe, sender, {
+                        setPreviewImage,
+                        setPreviewPdf,
+                        setPreviewDoc,
+                        setPreviewHtml,
+                        setPreviewSvg,
+                        setPreviewCsv,
+                        setPreviewPython,
+                        setPreviewOfx,
+                        setPreviewXml,
+                        setPreviewSql,
+                        setPreviewJsonc,
+                        setPreviewJson,
+                        setPreviewMd,
+                        setPreviewCode,
+                        setPreviewArchive
+                      })}
                     </div>
                     {(!isGroupChat || isLastInGroup) && (
                       <div style={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'flex-end',
-                        marginTop: 2,
-                        gap: 4
+                        gap: 4,
+                        marginTop: -2
                       }}>
                         <span style={{
-                          fontSize: 10,
-                          color: isMe ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.5)'
+                          fontSize: 11,
+                          color: isMe ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)'
                         }}>
                           {formatMessageTimestamp(message.created_at)}
                         </span>
@@ -554,23 +509,16 @@ messages.map((message, index) => {
                           style={{
                             background: 'transparent',
                             border: 'none',
-                            color: isMe ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.4)',
+                            color: isMe ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.3)',
                             cursor: 'pointer',
-                            padding: '2px 6px',
-                            fontSize: 16,
+                            padding: '2px 4px',
+                            fontSize: 14,
                             lineHeight: 1,
                             borderRadius: 4,
-                            opacity: 0.7,
-                            transition: 'opacity 0.2s, background 0.2s'
+                            opacity: 0,
+                            transition: 'opacity 0.15s ease'
                           }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.opacity = 1
-                            e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.opacity = 0.7
-                            e.currentTarget.style.background = 'transparent'
-                          }}
+                          className="chat-message-menu-btn"
                           title="Mais opções"
                         >
                           ⋮
@@ -1094,12 +1042,14 @@ messages.map((message, index) => {
             bottom: '100%',
             left: 12,
             right: 12,
-            background: theme.bgTertiary,
-            borderRadius: 8,
-            border: '1px solid rgba(63, 63, 70, 0.5)',
-            maxHeight: 200,
+            background: '#1A1A1E',
+            borderRadius: 12,
+            border: '1px solid rgba(99, 102, 241, 0.15)',
+            boxShadow: '0 -8px 30px rgba(0,0,0,0.5), 0 0 0 1px rgba(99,102,241,0.05)',
+            maxHeight: 240,
             overflow: 'auto',
-            marginBottom: 8
+            marginBottom: 8,
+            padding: '6px 0'
           }}>
             {filteredCommands.map((cmd, idx) => (
               <div
@@ -1107,17 +1057,65 @@ messages.map((message, index) => {
                 style={{
                   padding: '10px 14px',
                   cursor: 'pointer',
-                  background: idx === commandIndex ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
-                  borderBottom: idx < filteredCommands.length - 1 ? '1px solid rgba(63, 63, 70, 0.3)' : 'none'
+                  background: idx === commandIndex
+                    ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(99, 102, 241, 0.08))'
+                    : 'transparent',
+                  borderLeft: `3px solid ${idx === commandIndex ? '#8B5CF6' : 'transparent'}`,
+                  transition: 'all 0.12s ease'
                 }}
                 onClick={() => {
                   rest.setInput(`/${cmd.name} `)
                   rest.setShowCommandList(false)
                   inputRef.current?.focus()
                 }}
+                onMouseEnter={(e) => {
+                  if (idx !== commandIndex) {
+                    e.currentTarget.style.background = 'rgba(39, 39, 42, 0.5)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (idx !== commandIndex) {
+                    e.currentTarget.style.background = 'transparent'
+                  }
+                }}
               >
-                <div style={{ color: '#FFFFFF', fontWeight: 500 }}>/{cmd.name}</div>
-                <div style={{ color: '#FFFFFF', fontSize: 12 }}>{cmd.description}</div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 2
+                }}>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 22,
+                    height: 22,
+                    borderRadius: 6,
+                    background: 'rgba(139, 92, 246, 0.12)',
+                    color: '#A78BFA',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    flexShrink: 0
+                  }}>
+                    /
+                  </span>
+                  <span style={{
+                    color: '#E4E4E7',
+                    fontWeight: 600,
+                    fontSize: 13
+                  }}>
+                    {cmd.name}
+                  </span>
+                </div>
+                <div style={{
+                  color: '#71717A',
+                  fontSize: 12,
+                  marginLeft: 30,
+                  lineHeight: 1.4
+                }}>
+                  {cmd.description}
+                </div>
               </div>
             ))}
           </div>

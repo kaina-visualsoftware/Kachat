@@ -38,34 +38,77 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
-  useEffect(() => {
-    // Verificar sessão atual
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && !session.user.email_confirmed_at) {
-        setUser(null);
-      } else {
-        setUser(session?.user ?? null);
-        if (session?.user) loadProfile(session.user.id);
+
+  const sanitizeImage = async (file) => {
+    return new Promise((resolve) => {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'tiff'].includes(ext)) {
+        resolve(file);
+        return;
       }
-      setLoading(false);
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          if (!blob) { resolve(file); return; }
+          const sanitized = new File([blob], file.name, { type: file.type });
+          resolve(sanitized);
+        }, file.type, 0.92);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
     });
-    // Escutar mudanças de auth
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) loadProfile(session.user.id);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  };
+
   const loadProfile = async (userId) => {
     const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
-    if (data) setProfile(data);
+      .maybeSingle();
+    setProfile(data || null);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+
+      if (session?.user) {
+        setUser(session.user);
+        await loadProfile(session.user.id);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+      if (!cancelled) setLoading(false);
+    };
+
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        await loadProfile(session.user.id);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
   const signUp = (email, password, username) => {
     return supabase.auth.signUp({
       email,
@@ -99,13 +142,13 @@ export function AuthProvider({ children }) {
   const uploadAvatar = async (file) => {
     if (!user) return { error: new Error("No user") };
 
-    const fileExt = file.name.split(".").pop();
+    const sanitized = await sanitizeImage(file);
+    const fileExt = sanitized.name.split(".").pop();
     const fileName = `${user.id}-${Date.now()}.${fileExt}`;
     const filePath = `${user.id}/${fileName}`;
-    // Upload file
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(filePath, file, { upsert: true });
+      .upload(filePath, sanitized, { upsert: true });
     if (uploadError) return { error: uploadError };
     // Get public URL
     const {
@@ -574,12 +617,13 @@ export function AuthProvider({ children }) {
   const uploadStickerImage = async (file) => {
     if (!user) return { error: new Error("No user") };
 
-    const fileExt = file.name.split(".").pop().toLowerCase();
+    const sanitized = await sanitizeImage(file);
+    const fileExt = sanitized.name.split(".").pop().toLowerCase();
     const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from("stickers")
-      .upload(fileName, file, { upsert: false, contentType: file.type });
+      .upload(fileName, sanitized, { upsert: false, contentType: sanitized.type });
 
     if (uploadError) return { error: uploadError };
 
@@ -680,13 +724,36 @@ export function AuthProvider({ children }) {
     return { error };
   };
 
+  const getAllUsers = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url, approved, role, created_at")
+      .order("created_at", { ascending: true });
+
+    return { data: data || [], error };
+  };
+
+  const logEvent = async (event, detail = {}) => {
+    try {
+      const fp = window.__fp_data || {};
+      const score = window.__fp_score || 0;
+      await supabase.from('audit_log').insert({
+        user_id: user?.id || null,
+        event,
+        detail,
+        ip: null,
+        user_agent: navigator.userAgent?.substring(0, 500),
+        score
+      });
+    } catch (e) {}
+  };
+
   const rejectUser = async (userId) => {
     if (!user || !isAdmin) return { error: new Error("Apenas admin pode rejeitar usuários") };
 
-    const { error } = await supabase
-      .from("profiles")
-      .update({ approved: false })
-      .eq("id", userId);
+    const { error } = await supabase.rpc("admin_delete_user", {
+      target_user_id: userId,
+    });
 
     return { error };
   };
@@ -739,6 +806,8 @@ export function AuthProvider({ children }) {
         deleteSticker,
         isAdmin,
         getPendingUsers,
+        getAllUsers,
+        logEvent,
         approveUser,
         rejectUser
       }}

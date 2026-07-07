@@ -2,20 +2,39 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="robots" content="noindex, nofollow">
     <title>Redirecionando...</title>
     <script>
-      // Redireciona para index.html preservando o caminho da rota
-      const l = window.location;
-      // Extrai o path relativo a /Kachat/
-      const pathname = l.pathname.replace(/^\/Kachat/, '');
+      var l = window.location;
+      var pathname = l.pathname.replace(/^\/Kachat/, '');
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
         '/Kachat/?p=' + encodeURIComponent(pathname) +
         l.search + l.hash
       );
     </script>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #09090B;
+        color: #A1A1AA;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+      }
+      .container { max-width: 400px; }
+      .title { font-size: 64px; color: #27272A; font-weight: 800; margin: 0; line-height: 1; }
+      .text { font-size: 14px; margin: 16px 0 0; color: #71717A; }
+    </style>
   </head>
   <body>
-    Redirecionando...
+    <div class="container">
+      <div class="title">404</div>
+      <div class="text">Redirecionando...</div>
+    </div>
   </body>
 </html>

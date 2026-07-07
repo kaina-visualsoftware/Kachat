@@ -77,7 +77,37 @@ CREATE TABLE IF NOT EXISTS direct_messages (
 );
 
 -- =============================================
--- 2. ÍNDICES (para performance)
+-- 2. MIGRAÇÃO: garantir colunas em tabelas existentes
+-- =============================================
+
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'online';
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin'));
+
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE groups ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE group_members ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'member' CHECK (role IN ('admin', 'member'));
+ALTER TABLE group_members ADD COLUMN IF NOT EXISTS joined_at TIMESTAMPTZ DEFAULT NOW();
+
+ALTER TABLE group_messages ADD COLUMN IF NOT EXISTS reply_to JSONB;
+ALTER TABLE group_messages ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE group_messages ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+ALTER TABLE direct_messages ADD COLUMN IF NOT EXISTS reply_to JSONB;
+ALTER TABLE direct_messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE;
+ALTER TABLE direct_messages ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE direct_messages ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- Aprovar todos os usuários existentes
+-- ATENÇÃO: Migration única para aprovar usuários que existiam ANTES do sistema de aprovação
+-- Execute manualmente apenas UMA VEZ se necessário:
+-- UPDATE profiles SET approved = true WHERE approved = false;
+
+-- =============================================
+-- 3. ÍNDICES (para performance)
 -- =============================================
 
 -- Índices para profiles
@@ -107,7 +137,7 @@ CREATE INDEX IF NOT EXISTS idx_direct_messages_reply_to ON direct_messages USING
 CREATE INDEX IF NOT EXISTS idx_direct_messages_is_read ON direct_messages(is_read);
 
 -- =============================================
--- 3. POLICIES (segurança RLS)
+-- 4. POLICIES (segurança RLS)
 -- =============================================
 
 -- Habilitar RLS em todas as tabelas
@@ -211,7 +241,7 @@ DROP POLICY IF EXISTS "direct_messages_delete" ON direct_messages;
 CREATE POLICY "direct_messages_delete" ON direct_messages FOR DELETE USING (sender_id = auth.uid());
 
 -- =============================================
--- 4. TRIGGERS (funcionalidades automáticas)
+-- 5. TRIGGERS (funcionalidades automáticas)
 -- =============================================
 
 -- -----------------------------------------------------
@@ -271,7 +301,7 @@ CREATE TRIGGER direct_messages_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- =============================================
--- 5. STORAGE (arquivos)
+-- 6. STORAGE (arquivos)
 -- =============================================
 
 -- -----------------------------------------------------
@@ -306,18 +336,27 @@ CREATE POLICY "chat_files_public_read" ON storage.objects
 
 DROP POLICY IF EXISTS "chat_files_auth_insert" ON storage.objects;
 CREATE POLICY "chat_files_auth_insert" ON storage.objects 
-    FOR INSERT WITH CHECK (bucket_id = 'chat-files' AND auth.role = 'authenticated');
+    FOR INSERT WITH CHECK (bucket_id = 'chat-files' AND auth.role() = 'authenticated');
 
 -- =============================================
--- 6. REALTIME (mensagens em tempo real)
+-- 7. REALTIME (mensagens em tempo real)
 -- =============================================
 
 -- Habilitar Realtime nas tabelas de mensagens
-ALTER PUBLICATION supabase_realtime ADD TABLE group_messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE direct_messages;
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE group_messages;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE direct_messages;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- =============================================
--- 7. FUNÇÕES UTILITÁRIAS
+-- 8. FUNÇÕES UTILITÁRIAS
 -- =============================================
 
 -- -----------------------------------------------------
@@ -378,16 +417,52 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- =============================================
--- 8. MIGRAÇÃO: adicionar colunas para usuários existentes
--- =============================================
+-- -----------------------------------------------------
+-- Função: Admin deletar usuário (rejeitar cadastro)
+-- -----------------------------------------------------
+CREATE OR REPLACE FUNCTION public.admin_delete_user(target_user_id UUID)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  -- Verificar se quem chama é admin
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin') THEN
+    RAISE EXCEPTION 'Apenas admin pode deletar usuários';
+  END IF;
 
--- Adicionar colunas se não existirem (para quem já tinha o schema antigo)
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT false;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin'));
+  -- Deletar de auth.users (CASCADE deleta profile e demais relações)
+  DELETE FROM auth.users WHERE id = target_user_id;
+END;
+$$;
 
--- Aprovar todos os usuários existentes
-UPDATE profiles SET approved = true WHERE approved = false;
+-- -----------------------------------------------------
+-- Tabela: audit_log (monitoramento de segurança)
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    event TEXT NOT NULL,
+    detail JSONB,
+    ip TEXT,
+    user_agent TEXT,
+    score INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_event ON audit_log(event);
+
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "audit_log_insert" ON audit_log;
+CREATE POLICY "audit_log_insert" ON audit_log FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "audit_log_select_admin" ON audit_log;
+CREATE POLICY "audit_log_select_admin" ON audit_log FOR SELECT USING (
+    auth.uid() IN (SELECT id FROM profiles WHERE role = 'admin')
+);
 
 -- =============================================
 -- 9. VERIFICAÇÃO FINAL

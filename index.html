@@ -4,7 +4,33 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; font-src 'self' data:; frame-ancestors 'none'; form-action 'self'; base-uri 'self'" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
     <title>Kachat</title>
+    <script>
+      (function(){
+        // -- Deteccao headless --
+        var d=document, w=window, score=0;
+        if(w.navigator.webdriver) score+=50;
+        if(!w.chrome && !w.browser) score+=20;
+        if(w.navigator.plugins && w.navigator.plugins.length===0) score+=15;
+        if(!w.chrome || !w.chrome.runtime) score+=10;
+        try{new Function('')}catch(e){score+=30}
+        var t0=performance.now();
+        w.addEventListener('DOMContentLoaded',function(){
+          var dt=performance.now()-t0;
+          if(dt<50) score+=20;
+        });
+        // -- Fingerprinting reverso (client-side) --
+        var fp={ua:navigator.userAgent,lang:navigator.language,tz:new Date().getTimezoneOffset(),screen:w.screen.width+'x'+w.screen.height,colorDepth:w.screen.colorDepth||24};
+        w.__fp_score=score;
+        w.__fp_data=fp;
+        // -- Bloquear React DevTools --
+        w.__REACT_DEVTOOLS_GLOBAL_HOOK__={isDisabled:true,supportsFiber:false,inject:function(){},onCommitFiberRoot:function(){},onCommitFiberUnmount:function(){}};
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

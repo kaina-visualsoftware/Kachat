@@ -1,8 +1,10 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { useResponsive } from './hooks/useMediaQuery'
 import { Menu, X } from 'lucide-react'
+import { supabase } from './supabase'
+import useAntiScraping from './hooks/useAntiScraping'
 
 const Login = lazy(() => import('./components/Login'))
 const UserList = lazy(() => import('./components/UserList'))
@@ -15,13 +17,33 @@ const PendingApproval = lazy(() => import('./components/PendingApproval'))
 
 function ProtectedRoute({ children }) {
   const { user, loading, profile } = useAuth()
-  
-  if (loading) return <LoadingScreen />
+  const [dbProfile, setDbProfile] = useState(null)
+  const [checkingDb, setCheckingDb] = useState(true)
+
+  useEffect(() => {
+    if (!user) {
+      setCheckingDb(false)
+      return
+    }
+    supabase
+      .from('profiles')
+      .select('approved, role')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setDbProfile(data)
+        setCheckingDb(false)
+      })
+  }, [user])
+
+  if (loading || checkingDb) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
-  if (profile && !profile.approved && profile.role !== 'admin') {
+
+  const effectiveProfile = profile || dbProfile
+  if (!effectiveProfile || (!effectiveProfile.approved && effectiveProfile.role !== 'admin')) {
     return <LazyFallback><PendingApproval /></LazyFallback>
   }
-  
+
   return children
 }
 
@@ -282,6 +304,7 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
 }
 
 function App() {
+  useAntiScraping()
   return (
     <AuthProvider>
       <HashRouter>

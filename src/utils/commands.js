@@ -169,7 +169,7 @@ const commands = {
     description: 'Mostra a versão do app',
     execute: () => {
       return { 
-        message: `📱 *Kachat* - Versão 1.0.0\nDesenvolvido com React + Supabase`, 
+        message: `📱 *Kachat* - Versão 1.0.0`, 
         type: 'system' 
       }
     }
