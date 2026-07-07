@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Search, MessageSquare, UserCog } from 'lucide-react'
+import { LogOut, Search, MessageSquare, UserCog, ShieldCheck } from 'lucide-react'
+import AdminRequests from './AdminRequests'
 
-export default function UserList() {
+export default function UserList({ onSelect }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [lastMessages, setLastMessages] = useState({})
-  const { user, profile, signOut } = useAuth()
+  const [showAdminModal, setShowAdminModal] = useState(false)
+  const { user, profile, signOut, isAdmin } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -21,6 +23,7 @@ export default function UserList() {
     const { data, error } = await supabase
       .from('profiles')
       .select('id, username, avatar_url')
+      .eq('approved', true)
       .neq('id', user.id)
     
     const validUsers = data ? data.filter(u => u.username) : []
@@ -73,6 +76,7 @@ export default function UserList() {
 
   const startChat = (userId) => {
     navigate(`/chat/${userId}`)
+    onSelect?.()
   }
 
   const getInitials = (name) => {
@@ -330,6 +334,34 @@ export default function UserList() {
             Online
           </div>
         </div>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAdminModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              background: 'rgba(139, 92, 246, 0.15)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: 8,
+              color: '#A78BFA',
+              cursor: 'pointer',
+              transition: 'all 200ms ease',
+              flexShrink: 0
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(139, 92, 246, 0.25)'
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(139, 92, 246, 0.15)'
+            }}
+            title="Solicitações de acesso"
+          >
+            <ShieldCheck size={14} />
+          </button>
+        )}
         <button
           onClick={() => navigate('/profile')}
           style={{
@@ -391,6 +423,10 @@ export default function UserList() {
           <LogOut size={14} />
         </button>
       </div>
+
+      {showAdminModal && (
+        <AdminRequests onClose={() => setShowAdminModal(false)} />
+      )}
     </div>
   )
 }

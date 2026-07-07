@@ -570,6 +570,127 @@ export function AuthProvider({ children }) {
     return { error };
   };
 
+  // Sticker functions
+  const uploadStickerImage = async (file) => {
+    if (!user) return { error: new Error("No user") };
+
+    const fileExt = file.name.split(".").pop().toLowerCase();
+    const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("stickers")
+      .upload(fileName, file, { upsert: false, contentType: file.type });
+
+    if (uploadError) return { error: uploadError };
+
+    const { data: { publicUrl } } = supabase.storage.from("stickers").getPublicUrl(fileName);
+
+    return { data: { url: publicUrl, path: fileName }, error: null };
+  };
+
+  const getStickerPacks = async () => {
+    const { data, error } = await supabase
+      .from("sticker_packs")
+      .select("*")
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: false });
+
+    return { data: data || [], error };
+  };
+
+  const createStickerPack = async (name) => {
+    if (!user) return { error: new Error("No user") };
+
+    const { data, error } = await supabase
+      .from("sticker_packs")
+      .insert({ name, creator_id: user.id })
+      .select()
+      .single();
+
+    return { data, error };
+  };
+
+  const getStickers = async (packId) => {
+    const { data, error } = await supabase
+      .from("stickers")
+      .select("*")
+      .eq("pack_id", packId)
+      .eq("is_deleted", false)
+      .order("created_at", { ascending: true });
+
+    return { data: data || [], error };
+  };
+
+  const addStickerToPack = async (packId, imageUrl, emoji = null) => {
+    if (!user) return { error: new Error("No user") };
+
+    const { data, error } = await supabase
+      .from("stickers")
+      .insert({ pack_id: packId, image_url: imageUrl, emoji })
+      .select()
+      .single();
+
+    return { data, error };
+  };
+
+  const deleteStickerPack = async (packId) => {
+    if (!user) return { error: new Error("No user") };
+
+    const { error } = await supabase
+      .from("sticker_packs")
+      .update({ is_deleted: true })
+      .eq("id", packId)
+      .eq("creator_id", user.id);
+
+    return { error };
+  };
+
+  const deleteSticker = async (stickerId) => {
+    if (!user) return { error: new Error("No user") };
+
+    const { error } = await supabase
+      .from("stickers")
+      .update({ is_deleted: true })
+      .eq("id", stickerId);
+
+    return { error };
+  };
+
+  // Admin functions
+  const isAdmin = profile?.role === 'admin';
+
+  const getPendingUsers = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url, approved, role, created_at")
+      .eq("approved", false)
+      .order("created_at", { ascending: true });
+
+    return { data: data || [], error };
+  };
+
+  const approveUser = async (userId) => {
+    if (!user || !isAdmin) return { error: new Error("Apenas admin pode aprovar usuários") };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ approved: true })
+      .eq("id", userId);
+
+    return { error };
+  };
+
+  const rejectUser = async (userId) => {
+    if (!user || !isAdmin) return { error: new Error("Apenas admin pode rejeitar usuários") };
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ approved: false })
+      .eq("id", userId);
+
+    return { error };
+  };
+
   const updateDirectMessage = async (messageId, content) => {
     if (!user) return { error: new Error("No user") };
     
@@ -608,7 +729,18 @@ export function AuthProvider({ children }) {
         getGroupMedia,
         clearGroupMessages,
         getGroupMessages,
-        sendGroupMessage
+        sendGroupMessage,
+        uploadStickerImage,
+        getStickerPacks,
+        createStickerPack,
+        getStickers,
+        addStickerToPack,
+        deleteStickerPack,
+        deleteSticker,
+        isAdmin,
+        getPendingUsers,
+        approveUser,
+        rejectUser
       }}
     >
       {children}

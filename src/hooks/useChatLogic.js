@@ -59,6 +59,10 @@ export function useChatLogic({
   const [showMentionList, setShowMentionList] = useState(false)
   const [mentionQuery, setMentionQuery] = useState('')
 
+  // Sticker picker state
+  const [showStickerPicker, setShowStickerPicker] = useState(false)
+  const [showStickerManager, setShowStickerManager] = useState(false)
+
   // Reply states
   const [replyTo, setReplyTo] = useState(null)
   const [mentionFilter, setMentionFilter] = useState([])
@@ -81,6 +85,8 @@ export function useChatLogic({
   const audioBlobRef = useRef(null)
   const [mediaRecorder, setMediaRecorder] = useState(null)
   const recordingTimerRef = useRef(null)
+  const recordingChunksRef = useRef([])
+  const recordingStreamRef = useRef(null)
 
   const inputRef = useRef(null)
 
@@ -238,7 +244,16 @@ export function useChatLogic({
     setInput('')
     setShowCommandList(false)
     setShowMentionList(false)
+    setShowStickerPicker(false)
     setReplyTo(null)
+    scrollToBottom()
+  }
+
+  const sendSticker = async (stickerUrl, stickerId) => {
+    const content = `[sticker]${stickerUrl}|${stickerId}[/sticker]`
+    await sendMessage(content, replyTo)
+    setReplyTo(null)
+    setShowStickerPicker(false)
     scrollToBottom()
   }
 
@@ -573,25 +588,25 @@ export function useChatLogic({
     await sendFiles()
   }
 
-  // Audio recording
+  // Audio recording - WhatsApp style
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
-      const chunks = []
+      recordingStreamRef.current = stream
+      recordingChunksRef.current = []
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' })
       
       recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data)
+        if (e.data.size > 0) recordingChunksRef.current.push(e.data)
       }
       
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' })
+        const blob = new Blob(recordingChunksRef.current, { type: 'audio/webm' })
         setAudioBlob(blob)
         audioBlobRef.current = blob
-        stream.getTracks().forEach(track => track.stop())
       }
       
-      recorder.start()
+      recorder.start(250)
       setMediaRecorder(recorder)
       setIsRecording(true)
       setRecordingTime(0)
@@ -607,54 +622,61 @@ export function useChatLogic({
   const stopRecording = () => {
     if (mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop()
-      clearInterval(recordingTimerRef.current)
-      setIsRecording(false)
+    }
+    clearInterval(recordingTimerRef.current)
+    setIsRecording(false)
+    if (recordingStreamRef.current) {
+      recordingStreamRef.current.getTracks().forEach(track => track.stop())
+      recordingStreamRef.current = null
     }
   }
 
   const sendAudio = async () => {
+    const wasRecording = isRecording
+
     if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
       await new Promise((resolve) => {
         const originalOnStop = mediaRecorder.onstop
         mediaRecorder.onstop = () => {
           if (originalOnStop) originalOnStop()
-          resolve()
+          setTimeout(resolve, 100)
         }
         mediaRecorder.stop()
         clearInterval(recordingTimerRef.current)
         setIsRecording(false)
       })
     }
-    
-    const blobToUse = audioBlob || audioBlobRef.current
-    if (!blobToUse) {
-      await new Promise(resolve => setTimeout(resolve, 200))
+
+    if (recordingStreamRef.current) {
+      recordingStreamRef.current.getTracks().forEach(track => track.stop())
+      recordingStreamRef.current = null
     }
-    
+
     const finalBlob = audioBlob || audioBlobRef.current
-    if (!finalBlob) {
-      alert('Nenhum áudio gravado')
+    if (!finalBlob || finalBlob.size < 100) {
+      setAudioBlob(null)
+      audioBlobRef.current = null
+      setRecordingTime(0)
       return
     }
-    
-    if (!audioBlob && finalBlob) {
-      setAudioBlob(finalBlob)
-    }
-    
+
+    const duration = recordingTime > 0 ? recordingTime : Math.max(1, Math.round(finalBlob.size / 16000))
+
     setUploading(true)
     try {
       const file = new File([finalBlob], `audio_${Date.now()}.webm`, { type: 'audio/webm' })
       const result = await uploadFiles([file])
-      
+
       if (result.error) throw result.error
-      
+
       for (const fileData of result.data) {
-        const messageContent = `[file]${fileData.url}|${fileData.fileName}|${fileData.fileType}|${fileData.fileSize}[/file]`
+        const messageContent = `[voice]${fileData.url}|${duration}|${fileData.fileSize}[/voice]`
         await sendMessage(messageContent)
       }
-      
+
       setAudioBlob(null)
       audioBlobRef.current = null
+      setRecordingTime(0)
       if (fileInputRef.current) fileInputRef.current.value = ''
       scrollToBottom()
     } catch (error) {
@@ -669,10 +691,15 @@ export function useChatLogic({
       mediaRecorder.stop()
     }
     clearInterval(recordingTimerRef.current)
+    if (recordingStreamRef.current) {
+      recordingStreamRef.current.getTracks().forEach(track => track.stop())
+      recordingStreamRef.current = null
+    }
     setIsRecording(false)
     setRecordingTime(0)
     setAudioBlob(null)
     audioBlobRef.current = null
+    recordingChunksRef.current = []
   }
 
   // Command list handler - simple and fast, no filtering logic
@@ -777,6 +804,8 @@ export function useChatLogic({
     previewMd, setPreviewMd,
     previewCode, setPreviewCode,
     previewArchive, setPreviewArchive,
+    showStickerPicker, setShowStickerPicker,
+    showStickerManager, setShowStickerManager,
     showCommandList, setShowCommandList,
     filteredCommands, setFilteredCommands,
     commandIndex, setCommandIndex,
@@ -793,6 +822,7 @@ export function useChatLogic({
 
     // Functions
     handleSendMessage,
+    sendSticker,
     handleFileSelect,
     sendFiles,
     cancelFiles,

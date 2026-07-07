@@ -1,4 +1,5 @@
-import { parseFileMessage, renderTextWithLinks } from '../utils/linkDetector.jsx'
+import { parseFileMessage, parseStickerMessage, parseVoiceMessage, renderTextWithLinks } from '../utils/linkDetector.jsx'
+import { VoiceNote } from '../components/VoiceNote'
 import { parseMarkdown, hasMarkdown } from '../utils/markdownParser.jsx'
 import { FileText, FileSpreadsheet, FileJson, FileCode, FileArchive, Terminal, FileCode2, FileType } from 'lucide-react'
 import { theme, fileColors } from '../theme'
@@ -78,6 +79,41 @@ export function renderMessageContent(content, isMe, sender, {
     )
   }
   
+  // Voice message
+  if (content.startsWith('[voice]')) {
+    const voiceData = parseVoiceMessage(content)
+    if (voiceData) {
+      return (
+        <VoiceNote
+          url={voiceData.url}
+          duration={voiceData.duration}
+          isMe={isMe}
+        />
+      )
+    }
+  }
+
+  // Sticker message
+  if (content.startsWith('[sticker]')) {
+    const stickerData = parseStickerMessage(content)
+    if (stickerData) {
+      return (
+        <div style={{ marginTop: 4, maxWidth: 200 }}>
+          <img 
+            src={stickerData.url} 
+            alt="Figurinha"
+            style={{ 
+              width: '100%',
+              maxWidth: 160,
+              borderRadius: 8,
+              display: 'block'
+            }}
+          />
+        </div>
+      )
+    }
+  }
+
   // File message
   const fileData = parseFileMessage(content)
   if (fileData) {

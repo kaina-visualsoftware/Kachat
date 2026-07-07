@@ -117,6 +117,33 @@ function processUrls(text) {
   }).filter(Boolean);
 }
 
+export function parseVoiceMessage(content) {
+  const voiceRegex = /\[voice\](\S+)\|(\d+)\|(\d+)\[\/voice\]/;
+  const match = content.match(voiceRegex);
+
+  if (!match) return null;
+
+  return {
+    type: 'voice',
+    url: match[1],
+    duration: parseInt(match[2]),
+    fileSize: parseInt(match[3])
+  };
+}
+
+export function parseStickerMessage(content) {
+  const stickerRegex = /\[sticker\](\S+)\|(.+?)\[\/sticker\]/;
+  const match = content.match(stickerRegex);
+
+  if (!match) return null;
+
+  return {
+    type: 'sticker',
+    url: match[1],
+    stickerId: match[2]
+  };
+}
+
 export function parseFileMessage(content) {
   const fileRegex = /\[file\](\S+)\|(.+?)\|(.+?)\|(\d+)\[\/file\]/;
   const match = content.match(fileRegex);

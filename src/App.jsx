@@ -1,6 +1,8 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { lazy, Suspense, useState } from 'react'
+import { useResponsive } from './hooks/useMediaQuery'
+import { Menu, X } from 'lucide-react'
 
 const Login = lazy(() => import('./components/Login'))
 const UserList = lazy(() => import('./components/UserList'))
@@ -9,12 +11,16 @@ const GroupList = lazy(() => import('./components/GroupList'))
 const ChatGroup = lazy(() => import('./components/ChatGroup'))
 const EmptyState = lazy(() => import('./components/EmptyState'))
 const Profile = lazy(() => import('./components/Profile'))
+const PendingApproval = lazy(() => import('./components/PendingApproval'))
 
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, profile } = useAuth()
   
   if (loading) return <LoadingScreen />
   if (!user) return <Navigate to="/login" replace />
+  if (profile && !profile.approved && profile.role !== 'admin') {
+    return <LazyFallback><PendingApproval /></LazyFallback>
+  }
   
   return children
 }
@@ -110,6 +116,12 @@ function AppRoutes() {
 }
 
 function WhatsAppLayout({ children, activeTab, setActiveTab }) {
+  const { isMobile, isTablet } = useResponsive()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  const sidebarWidth = isMobile ? '100%' : isTablet ? '300px' : '380px'
+  const showSidebar = !isMobile || sidebarOpen
+
   return (
     <div style={{
       display: 'flex',
@@ -120,17 +132,84 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
       margin: 0,
       padding: 0
     }}>
+      {/* Mobile overlay */}
+      {isMobile && !sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(true)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 99,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            style={{
+              padding: '12px 24px',
+              background: '#8B5CF6',
+              border: 'none',
+              borderRadius: 8,
+              color: 'white',
+              fontSize: 16,
+              cursor: 'pointer'
+            }}
+          >
+            Abrir Conversas
+          </button>
+        </div>
+      )}
+      
       {/* Sidebar */}
       <div style={{
-        width: 380,
-        minWidth: 380,
+        width: sidebarWidth,
+        minWidth: isMobile ? '100%' : isTablet ? '300px' : '380px',
         height: '100%',
         background: 'rgba(24, 24, 27, 0.98)',
-        borderRight: '1px solid rgba(63, 63, 70, 0.5)',
+        borderRight: isMobile ? 'none' : '1px solid rgba(63, 63, 70, 0.5)',
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        position: isMobile ? 'absolute' : 'relative',
+        zIndex: isMobile && !sidebarOpen ? -1 : 100,
+        transform: isMobile && !sidebarOpen ? 'translateX(-100%)' : 'translateX(0)',
+        transition: 'transform 0.3s ease, width 0.3s ease'
       }}>
+        {/* Mobile header with close button */}
+        {isMobile && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '12px 16px',
+            borderBottom: '1px solid rgba(63, 63, 70, 0.5)'
+          }}>
+            <span style={{ color: '#A78BFA', fontWeight: 600, fontSize: 14 }}>
+              {activeTab === 'conversations' ? 'Conversas' : 'Grupos'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#A1A1AA',
+                cursor: 'pointer',
+                padding: 4
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+        )}
+        
         {/* Tabs */}
         <div style={{
           display: 'flex',
@@ -146,12 +225,12 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
              }}
             style={{
               flex: 1,
-              padding: '14px 16px',
+              padding: isMobile ? '12px 8px' : '14px 16px',
               background: activeTab === 'conversations' ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
               border: 'none',
               borderBottom: activeTab === 'conversations' ? '2px solid #8B5CF6' : '2px solid transparent',
               color: activeTab === 'conversations' ? '#A78BFA' : '#71717A',
-              fontSize: 13,
+              fontSize: isMobile ? 12 : 13,
               fontWeight: activeTab === 'conversations' ? 600 : 400,
               cursor: 'pointer',
               transition: 'all 200ms ease'
@@ -167,12 +246,12 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
              }}
             style={{
               flex: 1,
-              padding: '14px 16px',
+              padding: isMobile ? '12px 8px' : '14px 16px',
               background: activeTab === 'groups' ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
               border: 'none',
               borderBottom: activeTab === 'groups' ? '2px solid #8B5CF6' : '2px solid transparent',
               color: activeTab === 'groups' ? '#A78BFA' : '#71717A',
-              fontSize: 13,
+              fontSize: isMobile ? 12 : 13,
               fontWeight: activeTab === 'groups' ? 600 : 400,
               cursor: 'pointer',
               transition: 'all 200ms ease'
@@ -184,7 +263,7 @@ function WhatsAppLayout({ children, activeTab, setActiveTab }) {
 
         {/* Content based on active tab */}
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          {activeTab === 'conversations' ? <UserList /> : <GroupList />}
+          {activeTab === 'conversations' ? <UserList onSelect={() => isMobile && setSidebarOpen(false)} /> : <GroupList onSelect={() => isMobile && setSidebarOpen(false)} />}
         </div>
       </div>
 

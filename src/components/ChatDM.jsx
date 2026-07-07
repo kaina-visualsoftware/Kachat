@@ -2,15 +2,17 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Circle } from 'lucide-react'
+import { ArrowLeft, Circle, Menu } from 'lucide-react'
 import { useChatLogic } from '../hooks/useChatLogic'
 import { ChatBase } from '../components/ChatBase'
 import { Avatar } from '../components/Avatar'
+import { useResponsive } from '../hooks/useMediaQuery'
 
 export default function ChatDM() {
   const { receiverId } = useParams()
   const navigate = useNavigate()
   const { user, profile, uploadChatFiles, loading: authLoading } = useAuth()
+  const { isMobile } = useResponsive()
   const [receiverName, setReceiverName] = useState('')
   const [currentUserName, setCurrentUserName] = useState('')
   const [receiverProfile, setReceiverProfile] = useState(null)
@@ -161,32 +163,34 @@ export default function ChatDM() {
           borderBottom: '1px solid rgba(63, 63, 70, 0.5)',
           background: '#27272A'
         }}>
-          <button
-            onClick={() => navigate('/chat')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#A78BFA',
-              cursor: 'pointer',
-              padding: 8,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            <ArrowLeft size={24} />
-          </button>
+          {isMobile && (
+            <button
+              onClick={() => navigate('/')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#A78BFA',
+                cursor: 'pointer',
+                padding: 8,
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              <ArrowLeft size={24} />
+            </button>
+          )}
           
           <Avatar 
             url={receiverProfile?.avatar_url}
             initials={receiverName?.charAt(0).toUpperCase() || '?'}
-            size={40}
+            size={isMobile ? 36 : 40}
           />
           
           <div style={{ flex: 1 }}>
-            <div style={{ color: '#FAFAFA', fontWeight: 600, fontSize: 16 }}>
+            <div style={{ color: '#FAFAFA', fontWeight: 600, fontSize: isMobile ? 14 : 16 }}>
               {receiverName || 'Chat'}
             </div>
-            <div style={{ color: '#71717A', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ color: '#71717A', fontSize: isMobile ? 10 : 12, display: 'flex', alignItems: 'center', gap: 4 }}>
               <Circle size={8} fill={chatLogic.status === 'SUBSCRIBED' ? '#22C55E' : '#71717A'} color={chatLogic.status === 'SUBSCRIBED' ? '#22C55E' : '#71717A'} />
               {chatLogic.status === 'SUBSCRIBED' ? 'Online' : 'Conectando...'}
             </div>

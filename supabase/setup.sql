@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS profiles (
     username TEXT UNIQUE NOT NULL,
     avatar_url TEXT,
     status TEXT DEFAULT 'online',
+    approved BOOLEAN DEFAULT false,
+    role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -217,9 +219,17 @@ CREATE POLICY "direct_messages_delete" ON direct_messages FOR DELETE USING (send
 -- -----------------------------------------------------
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+    user_count INTEGER;
 BEGIN
-    INSERT INTO public.profiles (id, username)
-    VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'username', 'user_' || LEFT(NEW.id::TEXT, 8)));
+    SELECT COUNT(*) INTO user_count FROM public.profiles;
+    INSERT INTO public.profiles (id, username, approved, role)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'username', 'user_' || LEFT(NEW.id::TEXT, 8)),
+        user_count = 0,
+        CASE WHEN user_count = 0 THEN 'admin' ELSE 'user' END
+    );
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -369,7 +379,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- =============================================
--- 8. VERIFICAÇÃO FINAL
+-- 8. MIGRAÇÃO: adicionar colunas para usuários existentes
+-- =============================================
+
+-- Adicionar colunas se não existirem (para quem já tinha o schema antigo)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT false;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin'));
+
+-- Aprovar todos os usuários existentes
+UPDATE profiles SET approved = true WHERE approved = false;
+
+-- =============================================
+-- 9. VERIFICAÇÃO FINAL
 -- =============================================
 
 SELECT 'Setup completo executado com sucesso!' AS mensagem;
@@ -393,3 +414,78 @@ SELECT
 FROM pg_policies 
 WHERE schemaname = 'public' 
 ORDER BY tablename, policyname;
+
+-- =============================================
+-- 10. STICKERS (figurinhas)
+-- =============================================
+
+-- -----------------------------------------------------
+-- Tabela: sticker_packs
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS sticker_packs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    creator_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- -----------------------------------------------------
+-- Tabela: stickers
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS stickers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pack_id UUID REFERENCES sticker_packs(id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    emoji TEXT,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sticker_packs_creator ON sticker_packs(creator_id);
+CREATE INDEX IF NOT EXISTS idx_stickers_pack_id ON stickers(pack_id);
+
+ALTER TABLE sticker_packs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stickers ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "sticker_packs_select" ON sticker_packs;
+CREATE POLICY "sticker_packs_select" ON sticker_packs FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "sticker_packs_insert" ON sticker_packs;
+CREATE POLICY "sticker_packs_insert" ON sticker_packs FOR INSERT WITH CHECK (auth.uid() = creator_id);
+
+DROP POLICY IF EXISTS "sticker_packs_update" ON sticker_packs;
+CREATE POLICY "sticker_packs_update" ON sticker_packs FOR UPDATE USING (creator_id = auth.uid());
+
+DROP POLICY IF EXISTS "sticker_packs_delete" ON sticker_packs;
+CREATE POLICY "sticker_packs_delete" ON sticker_packs FOR DELETE USING (creator_id = auth.uid());
+
+DROP POLICY IF EXISTS "stickers_select" ON stickers;
+CREATE POLICY "stickers_select" ON stickers FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "stickers_insert" ON stickers;
+CREATE POLICY "stickers_insert" ON stickers FOR INSERT WITH CHECK (
+    pack_id IN (SELECT id FROM sticker_packs WHERE creator_id = auth.uid())
+);
+
+DROP POLICY IF EXISTS "stickers_update" ON stickers;
+CREATE POLICY "stickers_update" ON stickers FOR UPDATE USING (
+    pack_id IN (SELECT id FROM sticker_packs WHERE creator_id = auth.uid())
+);
+
+DROP POLICY IF EXISTS "stickers_delete" ON stickers;
+CREATE POLICY "stickers_delete" ON stickers FOR DELETE USING (
+    pack_id IN (SELECT id FROM sticker_packs WHERE creator_id = auth.uid())
+);
+
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('stickers', 'stickers', true, 1048576, ARRAY['image/png', 'image/webp', 'image/jpeg', 'image/gif'])
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "stickers_public_read" ON storage.objects;
+CREATE POLICY "stickers_public_read" ON storage.objects 
+    FOR SELECT USING (bucket_id = 'stickers');
+
+DROP POLICY IF EXISTS "stickers_auth_insert" ON storage.objects;
+CREATE POLICY "stickers_auth_insert" ON storage.objects 
+    FOR INSERT WITH CHECK (bucket_id = 'stickers' AND auth.role() = 'authenticated');

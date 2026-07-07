@@ -7,14 +7,16 @@ import AddMembersModal from './AddMembersModal'
 import MembersModal from './MembersModal'
 import EditGroupModal from './EditGroupModal'
 import MediaGalleryModal from './MediaGalleryModal'
-import { Avatar } from '../components/Avatar'
+import { Avatar } from './Avatar'
 import { useChatLogic } from '../hooks/useChatLogic'
 import { ChatBase } from '../components/ChatBase'
+import { useResponsive } from '../hooks/useMediaQuery'
 
 export default function ChatGroup() {
   const { groupId } = useParams()
   const navigate = useNavigate()
   const { user, profile, uploadChatFiles, getGroupMessages, sendGroupMessage, getGroupMembers, leaveGroup, clearGroupMessages, loading: authLoading } = useAuth()
+  const { isMobile } = useResponsive()
   const [groupName, setGroupName] = useState('')
   const [groupDescription, setGroupDescription] = useState('')
   const [groupAvatarUrl, setGroupAvatarUrl] = useState(null)
@@ -128,37 +130,39 @@ export default function ChatGroup() {
           borderBottom: '1px solid rgba(63, 63, 70, 0.5)',
           background: '#27272A'
         }}>
-          <button
-            onClick={() => navigate('/chat')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#A78BFA',
-              cursor: 'pointer',
-              padding: 8,
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            <ArrowLeft size={24} />
-          </button>
+          {isMobile && (
+            <button
+              onClick={() => navigate('/')}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#A78BFA',
+                cursor: 'pointer',
+                padding: 8,
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              <ArrowLeft size={24} />
+            </button>
+          )}
           
           <Avatar 
             url={groupAvatarUrl}
             initials={groupName?.charAt(0).toUpperCase() || '?'}
-            size={40}
+            size={isMobile ? 36 : 40}
           />
           
           <div style={{ flex: 1 }}>
-            <div style={{ color: '#FAFAFA', fontWeight: 600, fontSize: 16 }}>
+            <div style={{ color: '#FAFAFA', fontWeight: 600, fontSize: isMobile ? 14 : 16 }}>
               {groupName || 'Grupo'}
             </div>
-            {groupDescription ? (
+            {groupDescription && !isMobile ? (
               <div style={{ color: '#71717A', fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {groupDescription}
               </div>
             ) : (
-              <div style={{ color: '#71717A', fontSize: 12 }}>
+              <div style={{ color: '#71717A', fontSize: isMobile ? 10 : 12 }}>
                 {members.length} membro{members.length !== 1 ? 's' : ''}
               </div>
             )}

@@ -1,9 +1,12 @@
 import { useEffect, useRef } from 'react'
-import { Send, Upload, Mic, Square, X, Quote, Reply } from 'lucide-react'
+import { Send, Upload, Mic, Square, X, Quote, Reply, Smile } from 'lucide-react'
 import { PreviewModals } from './PreviewModals'
+import { StickerPicker } from './StickerPicker'
+import StickerManager from './StickerManager'
 import { renderMessageContent } from '../utils/renderMessageContent'
 import { theme } from '../theme'
 import { Avatar } from './Avatar'
+import { useResponsive } from '../hooks/useMediaQuery'
 
 export function ChatBase({
   chatType,
@@ -84,6 +87,13 @@ export function ChatBase({
   cancelEditing,
   saveEdit,
   
+  // Stickers
+  showStickerPicker,
+  setShowStickerPicker,
+  showStickerManager,
+  setShowStickerManager,
+  sendSticker,
+
   // Message menu
   messageMenu,
   setMessageMenu,
@@ -98,6 +108,55 @@ export function ChatBase({
   ...rest
 }) {
   const isGroupChat = chatType === 'group'
+  const { isMobile } = useResponsive()
+
+  // Helper function to format timestamp for messages
+  const formatMessageTimestamp = (timestamp) => {
+    const date = new Date(timestamp);
+    const offset = -3 * 60; // Brasília timezone
+    const adjusted = new Date(date.getTime() + offset * 60 * 1000);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const messageDate = new Date(adjusted);
+    messageDate.setHours(0, 0, 0, 0);
+    
+    const timeString = adjusted.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    
+    if (messageDate.getTime() === today.getTime()) {
+      return { 
+        label: timeString,
+        showDate: false,
+        timeOnly: true
+      };
+    }
+    
+    if (messageDate.getTime() === yesterday.getTime()) {
+      return { 
+        label: `Ontem ${timeString}`,
+        showDate: true,
+        timeOnly: false
+      };
+    }
+    
+    const dateString = adjusted.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit'
+    });
+    
+    return { 
+      label: `${dateString} ${timeString}`,
+      showDate: true,
+      timeOnly: false
+    };
+  };
 
   // Format timestamp for messages - shows date + time for DMs, time only for groups
   const formatMessageTimestamp = (timestamp) => {
@@ -250,7 +309,7 @@ export function ChatBase({
       <div className="chat-messages" style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '16px',
+        padding: isMobile ? '12px' : '16px',
         paddingBottom: 0,
         position: 'relative'
       }}>
@@ -772,6 +831,17 @@ messages.map((message, index) => {
           position: 'relative'
         }}
       >
+        {/* Sticker Picker */}
+        {showStickerPicker && (
+          <StickerPicker
+            onSelectSticker={(url, id) => sendSticker?.(url, id)}
+            onOpenManager={() => {
+              setShowStickerPicker?.(false)
+              setShowStickerManager?.(true)
+            }}
+            onClose={() => setShowStickerPicker?.(false)}
+          />
+        )}
         {/* File Previews */}
         {previews.length > 0 && (
           <div style={{
@@ -942,71 +1012,79 @@ messages.map((message, index) => {
           </div>
         )}
         
-        {/* Recording UI */}
+        {/* Recording UI - WhatsApp style */}
         {isRecording && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
             gap: 12,
             marginBottom: 12,
-            padding: '8px 12px',
-            background: 'rgba(239, 68, 68, 0.1)',
-            borderRadius: 8,
-            border: '1px solid rgba(239, 68, 68, 0.3)'
+            padding: '10px 16px',
+            background: 'rgba(239, 68, 68, 0.08)',
+            borderRadius: 12,
+            border: '1px solid rgba(239, 68, 68, 0.25)',
+            animation: 'fadeInUp 0.15s ease-out'
           }}>
             <div style={{
-              width: 12,
-              height: 12,
-              borderRadius: '50%',
-              background: 'theme.error',
-              animation: 'pulse 1s infinite'
-            }} />
-            <span style={{ color: 'theme.error', fontSize: 13, flex: 1 }}>
-              Gravando... {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
-            </span>
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4
+            }}>
+              <div style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: '#EF4444',
+                animation: 'pulse 1s infinite'
+              }} />
+              <span style={{
+                fontSize: 11,
+                color: '#EF4444',
+                fontWeight: 500,
+                marginLeft: 2
+              }}>
+                {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6
+            }}>
+              <span style={{
+                fontSize: 11,
+                color: '#EF4444',
+                opacity: 0.7
+              }}>
+                ← Deslize para cancelar
+              </span>
+            </div>
+
             <button
               type="button"
               onClick={cancelRecording}
               style={{
-                background: 'none',
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.15)',
                 border: 'none',
-                color: '#FFFFFF',
+                color: '#EF4444',
                 cursor: 'pointer',
-                padding: 4
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.15s ease'
               }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
             >
-              <X size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={stopRecording}
-              style={{
-                padding: '6px 12px',
-                borderRadius: 6,
-                background: 'theme.error',
-                border: 'none',
-                color: 'white',
-                fontSize: 13,
-                cursor: 'pointer'
-              }}
-            >
-              Parar
+              <X size={16} />
             </button>
           </div>
-        )}
-        
-        {/* Audio recorded UI */}
-        {!isRecording && (
-          <audio 
-            src={rest.audioBlob ? URL.createObjectURL(rest.audioBlob) : null}
-            controls
-            style={{ 
-              width: '100%', 
-              marginBottom: 12,
-              borderRadius: 8,
-              display: rest.audioBlob ? 'block' : 'none'
-            }}
-          />
         )}
         
         {/* Command List */}
@@ -1187,12 +1265,12 @@ messages.map((message, index) => {
             rows={1}
             style={{
               flex: 1,
-              padding: '12px 16px',
+              padding: isMobile ? '10px 14px' : '12px 16px',
               borderRadius: 24,
               border: '1px solid rgba(63, 63, 70, 0.5)',
               background: theme.bgTertiary,
               color: '#FFFFFF',
-              fontSize: 14,
+              fontSize: isMobile ? 13 : 14,
               outline: 'none',
               resize: 'none',
               maxHeight: 120,
@@ -1234,50 +1312,58 @@ messages.map((message, index) => {
           >
             <Upload size={20} />
           </button>
+
+          <button
+            type="button"
+            className="chat-button"
+            onClick={() => setShowStickerPicker?.(prev => !prev)}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: showStickerPicker ? theme.accent : theme.bgTertiary,
+              border: '1px solid rgba(63, 63, 70, 0.5)',
+              color: showStickerPicker ? '#FFFFFF' : 'theme.accentLight',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Smile size={20} />
+          </button>
           
-          {!isRecording ? (
-            <button
-              type="button"
-              className="chat-button"
-              onClick={startRecording}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = theme.bgTertiary}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                background: theme.bgTertiary,
-                border: '1px solid rgba(63, 63, 70, 0.5)',
-                color: 'theme.accentLight',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <Mic size={20} />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={sendAudio}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
-                background: 'theme.error',
-                border: 'none',
-                color: 'white',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Send size={20} />
-            </button>
-          )}
+          <button
+            type="button"
+            className="chat-button"
+            onMouseDown={() => startRecording?.()}
+            onMouseUp={() => { if (isRecording) sendAudio?.() }}
+            onTouchStart={() => startRecording?.()}
+            onTouchEnd={(e) => { e.preventDefault(); if (isRecording) sendAudio?.() }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)'}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = theme.bgTertiary
+              if (isRecording) sendAudio?.()
+            }}
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              background: isRecording ? '#EF4444' : theme.bgTertiary,
+              border: isRecording ? 'none' : '1px solid rgba(63, 63, 70, 0.5)',
+              color: isRecording ? '#FFFFFF' : 'theme.accentLight',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
+              transform: isRecording ? 'scale(1.1)' : 'scale(1)',
+              boxShadow: isRecording ? '0 0 20px rgba(239, 68, 68, 0.4)' : 'none'
+            }}
+          >
+            <Mic size={20} />
+          </button>
           
           <button
             type="submit"
@@ -1385,6 +1471,11 @@ messages.map((message, index) => {
         previewArchive={previewArchive}
         setPreviewArchive={setPreviewArchive}
       />
+
+      {/* Sticker Manager Modal */}
+      {showStickerManager && (
+        <StickerManager onClose={() => setShowStickerManager?.(false)} />
+      )}
 
       {/* Extra Modals */}
       {renderExtraModals?.()}

@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Search, MessageSquare, Plus, Users, Settings } from 'lucide-react'
+import { LogOut, Search, MessageSquare, Plus, Users, Settings, ShieldCheck } from 'lucide-react'
+import AdminRequests from './AdminRequests'
 
-export default function GroupList() {
+export default function GroupList({ onSelect }) {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [lastMessages, setLastMessages] = useState({})
-  const { user, signOut, getGroups, profile } = useAuth()
+  const [showAdminModal, setShowAdminModal] = useState(false)
+  const { user, signOut, getGroups, profile, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [showCreateModal, setShowCreateModal] = useState(false)
 
@@ -63,6 +65,7 @@ export default function GroupList() {
 
   const openGroup = (groupId) => {
     navigate(`/group/${groupId}`)
+    onSelect?.()
   }
 
   const filteredGroups = groups.filter(g => 
@@ -353,6 +356,30 @@ export default function GroupList() {
             Online
           </div>
         </div>
+        {isAdmin && (
+          <button
+            onClick={() => setShowAdminModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 32,
+              height: 32,
+              background: 'rgba(139, 92, 246, 0.15)',
+              border: '1px solid rgba(139, 92, 246, 0.3)',
+              borderRadius: 8,
+              color: '#A78BFA',
+              cursor: 'pointer',
+              transition: 'all 200ms ease',
+              flexShrink: 0
+            }}
+            onMouseEnter={(e) => e.target.style.background = 'rgba(139, 92, 246, 0.25)'}
+            onMouseLeave={(e) => e.target.style.background = 'rgba(139, 92, 246, 0.15)'}
+            title="Solicitações de acesso"
+          >
+            <ShieldCheck size={14} />
+          </button>
+        )}
         <button
           onClick={() => navigate('/profile')}
           style={{
@@ -424,6 +451,9 @@ export default function GroupList() {
           }}
         />
       )}
+      {showAdminModal && (
+        <AdminRequests onClose={() => setShowAdminModal(false)} />
+      )}
     </div>
   )
 }
@@ -445,6 +475,7 @@ function CreateGroupModal({ onClose, onCreated }) {
     const { data } = await supabase
       .from('profiles')
       .select('id, username, avatar_url')
+      .eq('approved', true)
       .neq('id', user.id)
     
     if (data) setUsers(data.filter(u => u.username))
