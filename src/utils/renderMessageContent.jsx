@@ -21,28 +21,34 @@ export function renderMessageContent(content, isMe, sender, {
   setPreviewCode,
   setPreviewArchive
 }) {
-  // System messages
+  // System messages (command responses)
   if (content.startsWith('📋') || content.startsWith('🕐') || content.startsWith('📅') || 
       content.startsWith('🏓') || content.startsWith('🎲') || content.startsWith('🪙') || 
-      content.startsWith('🔀') || content.startsWith('¯') || content.startsWith('(╯') || 
-      content.startsWith('┬─') || content.startsWith('( ͡°') || content.startsWith('📱') || 
-      content.startsWith('⏱️') || content.startsWith('__CLEAR__')) {
+      content.startsWith('🔀') || content.startsWith('📱') || content.startsWith('⏱️') || 
+      content === '__CLEAR__') {
     
     if (content === '__CLEAR__') return null
-    
-    const isSystem = content.startsWith('📋') || content.startsWith('🕐') || 
-                      content.startsWith('📅') || content.startsWith('🏓') || 
-                      content.startsWith('⏱️') || content.startsWith('📱')
-    
+
     return (
       <div style={{
-        fontSize: 12,
-        color: isSystem ? theme.textMuted : theme.text,
-        fontStyle: isSystem ? 'italic' : 'normal',
-        padding: '4px 8px',
-        textAlign: 'center'
+        display: 'flex',
+        justifyContent: 'center',
+        padding: '2px 0'
       }}>
-        {content}
+        <div style={{
+          background: 'rgba(139, 92, 246, 0.12)',
+          borderRadius: 8,
+          padding: '6px 12px',
+          fontSize: 12,
+          color: '#D4D4D8',
+          fontStyle: 'italic',
+          lineHeight: 1.5,
+          textAlign: 'center',
+          maxWidth: '100%',
+          border: '1px solid rgba(139, 92, 246, 0.15)'
+        }}>
+          {content}
+        </div>
       </div>
     )
   }
